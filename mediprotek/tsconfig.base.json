@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "rootDir": "./",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "module": "esnext",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "lib": ["es2022", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": "./",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@mediprotek/backend-auth": ["libs/backend-auth/src/index.ts"],
+      "@mediprotek/backend-user": ["libs/backend-user/src/index.ts"],
+      "@mediprotek/frontend-auth": ["libs/frontend-auth/src/index.ts"],
+      "@mediprotek/frontend-ui": ["libs/frontend-ui/src/index.ts"],
+      "@mediprotek/frontend-user": ["libs/frontend-user/src/index.ts"],
+      "@mediprotek/shared-interfaces": ["libs/shared-interfaces/src/index.ts"],
+      "@auth/*": ["apps/backend/auth-service/src/app/*"],
+      "@shared/*": ["libs/shared-interfaces/src/lib/*"],
+      "@dtos/*": ["libs/shared-interfaces/src/lib/dtos/*"],
+      "@entities/*": ["apps/backend/auth-service/src/app/entities/*"],
+      "@interfaces/*": ["libs/shared-interfaces/src/lib/interfaces/*"],
+      "@decorators/*": ["apps/backend/auth-service/src/app/auth/decorators/*"],
+      "@guards/*": ["apps/backend/auth-service/src/app/auth/guards/*"],
+      "@strategies/*": ["apps/backend/auth-service/src/app/auth/strategies/*"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
