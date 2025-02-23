@@ -96,6 +96,7 @@
     }
   },
   "paths": {
+    "@libs/*": ["libs/*"],
     "@mediprotek/shared-interfaces": ["libs/shared-interfaces/src/index.ts"],
     "@auth/*": ["apps/backend/auth-service/src/app/*"],
     "@shared/*": ["libs/shared-interfaces/src/lib/*"],

@@ -92,25 +92,35 @@ export class AuthController {
     status: 403,
     description: 'No tiene los permisos necesarios',
   })
-  @Post('admin/users')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @RequirePermissions(Permission.CREATE_USERS)
-  @ApiOperation({ summary: 'Crear nuevo usuario (Requiere permiso CREATE_USERS)' })
-  async createUser(@Body() createUserDto: RegisterDto) {
-    return this.authService.createUser(createUserDto);
+  @Post('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Crear un nuevo usuario' })
+  @ApiResponse({
+    status: 201,
+    description: 'Usuario creado exitosamente',
+    type: User,
+  })
+  async createUser(@Body() createUserDto: RegisterDto): Promise<AuthResponse> {
+    return this.authService.register(createUserDto);
   }
 
-  @Delete('admin/users/:id')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @RequirePermissions(Permission.DELETE_USERS)
-  @ApiOperation({ summary: 'Eliminar usuario (Requiere permiso DELETE_USERS)' })
-  async deleteUser(@Param('id', ParseUUIDPipe) id: string) {
-    return this.authService.deleteUser(id);
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Eliminar un usuario por ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario eliminado exitosamente',
+  })
+  async deleteUser(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.authService.delete(id);
   }
 
-  @Put('users/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Actualizar usuario' })
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Actualizar un usuario por ID' })
   @ApiResponse({
     status: 200,
     description: 'Usuario actualizado exitosamente',
@@ -119,25 +129,12 @@ export class AuthController {
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @CurrentUser() currentUser: User,
-  ) {
-    // Solo permitir actualizar el propio perfil o ser admin
-    if (id !== currentUser.id && currentUser.role !== Role.ADMIN) {
-      throw new ForbiddenException('No tiene permisos para actualizar este usuario');
-    }
-    return this.authService.updateUser(id, updateUserDto);
+  ): Promise<User> {
+    return this.authService.update(id, updateUserDto);
   }
 
-  @Delete('users/:id')
-  @UseGuards(JwtAuthGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Eliminar usuario' })
-  @ApiResponse({
-    status: 200,
-    description: 'Usuario eliminado exitosamente',
-  })
   @Get('users')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Listar usuarios con paginación y filtros' })
   @ApiResponse({
@@ -150,6 +147,6 @@ export class AuthController {
     @Query('limit') limit = 10,
     @Query('search') search?: string,
   ) {
-    return this.authService.findUsers(page, limit, search);
+    return this.authService.findAll(page, limit, search);
   }
 }

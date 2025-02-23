@@ -1,3 +1,4 @@
+// apps/backend/auth-service/src/app/auth/auth.service.ts
 import {
   Injectable,
   UnauthorizedException,
@@ -7,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { User } from '@entities/user.entity';
 import { LoginDto, RegisterDto, AuthResponse } from '@mediprotek/shared-interfaces';
 import { JwtPayload } from '@interfaces/auth/jwt-payload.interface';
@@ -26,92 +28,98 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      role: user.role,
     };
     return this.jwtService.sign(payload);
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    const existingUser = await this.userRepository.findOne({
-      where: { email: registerDto.email },
-    });
+    try {
+      console.log('Iniciando registro con datos:', { ...registerDto, password: '[REDACTED]' });
 
-    if (existingUser) {
-      throw new ConflictException('El correo electrónico ya está registrado');
+      const existingUser = await this.userRepository.findOne({
+        where: { email: registerDto.email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('El correo electrónico ya está registrado');
+      }
+
+      console.log('Creando nuevo usuario...');
+      const user = this.userRepository.create(registerDto);
+      console.log('Usuario creado en memoria:', { ...user, password: '[REDACTED]' });
+
+      console.log('Guardando usuario en la base de datos...');
+      const savedUser = await this.userRepository.save(user);
+      console.log('Usuario guardado en la base de datos:', {
+        ...savedUser,
+        password: '[REDACTED]',
+      });
+
+      console.log('Buscando usuario guardado...');
+      const userWithoutPassword = await this.userRepository.findOne({
+        where: { id: savedUser.id },
+      });
+
+      if (!userWithoutPassword) {
+        throw new NotFoundException('Error al crear el usuario');
+      }
+
+      console.log('Usuario encontrado, generando token...');
+      const token = this.createToken(savedUser);
+      console.log('Token generado exitosamente');
+
+      return {
+        user: userWithoutPassword,
+        accessToken: token,
+      };
+    } catch (error) {
+      console.error('Error en el registro:', error);
+      throw error;
     }
-
-    const user = this.userRepository.create(registerDto);
-    await this.userRepository.save(user);
-
-    return {
-      user,
-      accessToken: this.createToken(user),
-    };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.userRepository.findOne({
       where: { email: loginDto.email },
-      select: ['id', 'email', 'firstName', 'lastName', 'password', 'createdAt', 'updatedAt'],
+      select: ['id', 'email', 'password', 'firstName', 'lastName', 'role'], // Incluimos explícitamente el password
     });
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const isPasswordValid = await user.validatePassword(loginDto.password);
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    const { password, ...userWithoutPassword } = user;
+
     return {
-      user,
+      user: userWithoutPassword,
       accessToken: this.createToken(user),
     };
   }
 
-  async findAllUsers(): Promise<User[]> {
-    return this.userRepository.find({
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'createdAt', 'updatedAt'],
+  async findById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id },
     });
-  }
 
-  async createUser(createUserDto: RegisterDto): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
-  }
-
-  async deleteUser(id: string): Promise<void> {
-    const result = await this.userRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-  }
-
-  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // Si se está actualizando el email, verificar que no exista
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingUser = await this.userRepository.findOne({
-        where: { email: updateUserDto.email },
-      });
-      if (existingUser) {
-        throw new ConflictException('El correo electrónico ya está registrado');
-      }
-    }
-
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+    return user;
   }
 
-  async findUsers(
-    page: number,
-    limit: number,
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
     search?: string,
-  ): Promise<{ items: User[]; total: number }> {
+  ): Promise<{ users: User[]; total: number }> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 
     if (search) {
@@ -121,14 +129,25 @@ export class AuthService {
       );
     }
 
-    const [items, total] = await queryBuilder
+    const [users, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    return {
-      items,
-      total,
-    };
+    return { users, total };
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findById(id);
+
+    // Si se está actualizando la contraseña, la entidad se encargará de hashearla
+    Object.assign(user, updateUserDto);
+
+    return this.userRepository.save(user);
+  }
+
+  async delete(id: string): Promise<void> {
+    const user = await this.findById(id);
+    await this.userRepository.remove(user);
   }
 }

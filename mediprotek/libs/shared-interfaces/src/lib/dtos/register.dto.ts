@@ -52,7 +52,10 @@ export class RegisterDto {
   @IsString()
   @MinLength(6)
   @MaxLength(50)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/, {
+    message:
+      'La contraseña debe contener al menos una letra mayúscula, una minúscula, un número y un carácter especial',
+  })
   password: string;
 
   @ApiProperty({

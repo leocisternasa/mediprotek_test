@@ -16,6 +16,7 @@
     "strict": true,
     "strictPropertyInitialization": false,
     "paths": {
+      "@libs/*": ["libs/*"],
       "@mediprotek/backend-auth": ["libs/backend-auth/src/index.ts"],
       "@mediprotek/backend-user": ["libs/backend-user/src/index.ts"],
       "@mediprotek/frontend-auth": ["libs/frontend-auth/src/index.ts"],
@@ -29,7 +30,8 @@
       "@interfaces/*": ["libs/shared-interfaces/src/lib/interfaces/*"],
       "@decorators/*": ["apps/backend/auth-service/src/app/auth/decorators/*"],
       "@guards/*": ["apps/backend/auth-service/src/app/auth/guards/*"],
-      "@strategies/*": ["apps/backend/auth-service/src/app/auth/strategies/*"]
+      "@strategies/*": ["apps/backend/auth-service/src/app/auth/strategies/*"],
+      "@env/*": ["apps/frontend/src/environments/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

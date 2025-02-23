@@ -2,6 +2,7 @@
 
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
+import { User } from '../entities/user.entity';
 
 dotenv.config();
 
@@ -12,7 +13,7 @@ const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  entities: [User], // Especificamos directamente la entidad
   synchronize: process.env.NODE_ENV === 'development', // Solo true en desarrollo
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production',
