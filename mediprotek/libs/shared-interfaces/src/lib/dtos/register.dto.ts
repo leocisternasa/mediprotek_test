@@ -7,14 +7,9 @@ import {
   IsEnum,
   IsOptional,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@shared/enums/role.enum';
 
 export class RegisterDto {
-  @ApiProperty({
-    example: 'usuario@ejemplo.com',
-    description: 'Correo electrónico del usuario',
-  })
   @IsEmail(
     {},
     {
@@ -24,31 +19,18 @@ export class RegisterDto {
   @MaxLength(50)
   email: string;
 
-  @ApiProperty({
-    example: 'Juan',
-    description: 'Nombre del usuario',
-  })
   @IsString()
   @MinLength(2)
   @MaxLength(100)
   @Matches(/^[a-zA-ZÀ-ÿ\s]+$/)
   firstName: string;
 
-  @ApiProperty({
-    example: 'Pérez',
-    description: 'Apellido del usuario',
-  })
   @IsString()
   @MinLength(2)
   @MaxLength(100)
   @Matches(/^[a-zA-ZÀ-ÿ\s]+$/)
   lastName: string;
 
-  @ApiProperty({
-    example: 'MiContraseña123',
-    description:
-      'Contraseña del usuario (mínimo 6 caracteres, debe incluir mayúsculas, minúsculas y números)',
-  })
   @IsString()
   @MinLength(6)
   @MaxLength(50)
@@ -58,13 +40,7 @@ export class RegisterDto {
   })
   password: string;
 
-  @ApiProperty({
-    enum: Role,
-    default: Role.USER,
-    required: false,
-    description: 'Rol del usuario (opcional, por defecto: user)',
-  })
-  @IsEnum(Role)
   @IsOptional()
+  @IsEnum(Role, { message: 'El rol debe ser admin o user' })
   role?: Role;
 }

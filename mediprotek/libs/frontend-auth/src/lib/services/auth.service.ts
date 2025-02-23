@@ -15,7 +15,7 @@ export interface ApiResponse<T> {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly API_URL = `${environment.apiUrl}/auth`;
+  private readonly API_URL = `${environment.apiUrl}/api/auth`;
   private currentUserSubject = new BehaviorSubject<AuthResponse | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
@@ -28,9 +28,13 @@ export class AuthService {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       try {
-        const user = JSON.parse(savedUser);
-        console.log('🟢 Restored user session:', { email: user.data.user.email });
-        this.currentUserSubject.next(user.data);
+        const userData = JSON.parse(savedUser);
+        console.log('🟢 Restored user session:', { 
+          email: userData.data?.user?.email,
+          token: !!userData.data?.accessToken
+        });
+        // Extraer los datos de la respuesta
+        this.currentUserSubject.next(userData.data);
       } catch (error) {
         console.error('🔴 Error parsing saved user:', error);
         localStorage.removeItem('currentUser');
@@ -47,7 +51,9 @@ export class AuthService {
           message: response.message,
           userId: response.data.user.id,
           email: response.data.user.email,
+          token: response.data.accessToken
         });
+        // Guardar la respuesta completa para mantener consistencia
         localStorage.setItem('currentUser', JSON.stringify(response));
         this.currentUserSubject.next(response.data);
       }),
@@ -83,7 +89,14 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return this.currentUserSubject.value?.accessToken || null;
+    console.log('🔑 Getting token from current user...');
+    const token = this.currentUserSubject.value?.accessToken;
+    if (!token) {
+      console.warn('⚠️ No token found in current user');
+    } else {
+      console.log('🟢 Token found');
+    }
+    return token || null;
   }
 
   getCurrentUser(): User | null {

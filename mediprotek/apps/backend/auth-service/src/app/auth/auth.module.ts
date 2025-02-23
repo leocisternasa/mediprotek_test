@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from '@entities/user.entity';
 import jwtConfig from '@auth/config/jwt.config';
+import { RolesGuard } from './guards/roles.guard';
+import { PermissionsGuard } from './guards/permissions.guard';
 
 @Module({
   imports: [
@@ -25,8 +27,8 @@ import jwtConfig from '@auth/config/jwt.config';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RolesGuard, PermissionsGuard],
   controllers: [AuthController],
-  exports: [JwtStrategy, PassportModule],
+  exports: [JwtStrategy, PassportModule, RolesGuard, PermissionsGuard],
 })
 export class AuthModule {}

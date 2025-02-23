@@ -1,0 +1,10 @@
+{
+  "name": "@mediprotek/auth-service",
+  "version": "0.0.1",
+  "dependencies": {
+    "@nestjs/mapped-types": "2.0.5",
+    "@nestjs/swagger": "7.3.0",
+    "swagger-ui-express": "5.0.0",
+    "path-to-regexp": "3.2.0"
+  }
+}

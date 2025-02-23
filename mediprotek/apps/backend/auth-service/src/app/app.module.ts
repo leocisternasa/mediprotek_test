@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import databaseConfig from './config/database.config';
+import { SeederModule } from './database/seeders/seeder.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import databaseConfig from './config/database.config';
     }),
     TypeOrmModule.forRoot(databaseConfig),
     AuthModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],

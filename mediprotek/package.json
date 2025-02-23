@@ -5,10 +5,12 @@
   "scripts": {
     "format": "nx format:write",
     "format:write": "nx format:write",
-    "format:check": "nx format:check"
+    "format:check": "nx format:check",
+    "seed": "nx run auth-service:build && node dist/apps/backend/auth-service/seed.js"
   },
   "private": true,
   "devDependencies": {
+    "@angular-builders/custom-webpack": "^19.0.0",
     "@angular-devkit/build-angular": "~19.1.0",
     "@angular-devkit/core": "~19.1.0",
     "@angular-devkit/schematics": "~19.1.0",
@@ -72,22 +74,24 @@
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^10.0.2",
     "@nestjs/jwt": "^11.0.0",
-    "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.2",
-    "@nestjs/swagger": "^7.3.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@nestjs/swagger": "7.3.0",
+    "@nestjs/mapped-types": "2.0.5",
+    "swagger-ui-express": "5.0.0",
+    "path-to-regexp": "3.2.0",
     "axios": "^1.6.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.7",
+    "nest-commander": "^3.16.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.13.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~7.8.0",
-    "swagger-ui-express": "^5.0.0",
     "typeorm": "^0.3.20",
     "zone.js": "~0.15.0"
   }

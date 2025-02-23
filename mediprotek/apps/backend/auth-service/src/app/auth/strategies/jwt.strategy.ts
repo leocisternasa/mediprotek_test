@@ -22,11 +22,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    if (!payload.role) {
+      throw new UnauthorizedException('Token inválido: falta el rol del usuario');
+    }
+
     return {
       id: payload.sub,
       email: payload.email,
       firstName: payload.firstName,
       lastName: payload.lastName,
+      role: payload.role, // Agregamos el role
     };
   }
 }

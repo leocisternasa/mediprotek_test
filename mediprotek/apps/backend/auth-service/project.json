@@ -13,6 +13,12 @@
         "compiler": "tsc",
         "outputPath": "dist/apps/backend/auth-service",
         "main": "apps/backend/auth-service/src/main.ts",
+        "additionalEntryPoints": [
+          {
+            "entryName": "seed",
+            "entryPath": "apps/backend/auth-service/src/seed.ts"
+          }
+        ],
         "tsConfig": "apps/backend/auth-service/tsconfig.app.json",
         "assets": ["apps/backend/auth-service/src/assets"],
         "isolatedConfig": true,

@@ -79,19 +79,22 @@ export class AuthController {
     return user;
   }
 
-  @Get('admin/users')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @RequirePermissions(Permission.READ_USERS)
-  @ApiOperation({ summary: 'Obtener lista de usuarios (Requiere permiso READ_USERS)' })
+  @Get('users')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener lista de usuarios' })
   @ApiResponse({
     status: 200,
     description: 'Lista de usuarios obtenida exitosamente',
     type: [User],
   })
-  @ApiResponse({
-    status: 403,
-    description: 'No tiene los permisos necesarios',
-  })
+  async getUsers(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('search') search?: string,
+  ) {
+    return this.authService.findAll(page, limit, search);
+  }
+
   @Post('users')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -105,22 +108,9 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Eliminar un usuario por ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Usuario eliminado exitosamente',
-  })
-  async deleteUser(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.authService.delete(id);
-  }
-
-  @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Actualizar un usuario por ID' })
+  @Put('users/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Actualizar usuario' })
   @ApiResponse({
     status: 200,
     description: 'Usuario actualizado exitosamente',
@@ -129,24 +119,49 @@ export class AuthController {
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+    @CurrentUser() currentUser: User,
+  ) {
+    // Solo admin puede actualizar cualquier usuario
+    // Usuarios normales solo pueden actualizar su propio perfil
+    if (currentUser.role !== Role.ADMIN && id !== currentUser.id) {
+      throw new ForbiddenException('No tienes permiso para actualizar este usuario');
+    }
     return this.authService.update(id, updateUserDto);
   }
 
-  @Get('users')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('users/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Listar usuarios con paginación y filtros' })
+  @RequirePermissions(Permission.DELETE_USERS)
+  @ApiOperation({ summary: 'Eliminar usuario' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de usuarios',
-    type: [User],
+    description: 'Usuario eliminado exitosamente',
   })
-  async getUsers(
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Query('search') search?: string,
-  ) {
-    return this.authService.findAll(page, limit, search);
+  @ApiResponse({
+    status: 403,
+    description: 'No tiene permisos para eliminar usuarios',
+  })
+  async deleteUser(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: User) {
+    // Solo admin puede eliminar cualquier usuario
+    // Usuarios normales solo pueden eliminar su propio perfil
+    if (currentUser.role !== Role.ADMIN && id !== currentUser.id) {
+      throw new ForbiddenException('No tienes permiso para eliminar este usuario');
+    }
+    return this.authService.delete(id);
+  }
+
+  @Delete('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Eliminar usuarios masivamente (Solo administradores)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuarios eliminados exitosamente',
+  })
+  async deleteUsers(@Body() ids: string[]) {
+    for (const id of ids) {
+      await this.authService.delete(id);
+    }
   }
 }

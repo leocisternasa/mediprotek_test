@@ -16,15 +16,25 @@ export class JwtInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService, private router: Router) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    console.log('📥 Intercepting request to:', request.url);
     const token = this.authService.getToken();
+    console.log('🔑 Current token:', token ? 'Present' : 'Missing');
 
     if (token) {
+      const authHeader = `Bearer ${token}`;
       console.log('🔑 Adding JWT token to request');
       request = request.clone({
         setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: authHeader
+        }
       });
+      console.log('🟢 Request headers:', {
+        url: request.url,
+        method: request.method,
+        authHeader: request.headers.get('Authorization')
+      });
+    } else {
+      console.warn('⚠️ No token available for request to:', request.url);
     }
 
     return next.handle(request).pipe(
