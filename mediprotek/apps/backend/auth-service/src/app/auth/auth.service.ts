@@ -119,6 +119,8 @@ export class AuthService {
     page: number = 1,
     limit: number = 10,
     search?: string,
+    sortBy: string = 'name',
+    sortDirection: 'asc' | 'desc' = 'asc',
   ): Promise<{ users: User[]; total: number }> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 
@@ -127,6 +129,24 @@ export class AuthService {
         '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
         { search: `%${search}%` },
       );
+    }
+
+    // Mapear los nombres de columnas del frontend a los nombres de columnas de la base de datos
+    const columnMap: { [key: string]: string } = {
+      name: 'firstName',
+      email: 'email',
+      role: 'role'
+    };
+
+    const dbColumn = columnMap[sortBy] || 'firstName';
+    
+    // Si estamos ordenando por nombre, ordenar por firstName y lastName
+    if (sortBy === 'name') {
+      queryBuilder
+        .orderBy(`user.firstName`, sortDirection.toUpperCase() as 'ASC' | 'DESC')
+        .addOrderBy(`user.lastName`, sortDirection.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy(`user.${dbColumn}`, sortDirection.toUpperCase() as 'ASC' | 'DESC');
     }
 
     const [users, total] = await queryBuilder

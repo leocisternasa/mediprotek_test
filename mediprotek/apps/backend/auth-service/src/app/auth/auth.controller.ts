@@ -91,8 +91,34 @@ export class AuthController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDirection') sortDirection?: 'asc' | 'desc',
   ) {
-    return this.authService.findAll(page, limit, search);
+    return this.authService.findAll(page, limit, search, sortBy, sortDirection);
+  }
+
+  @Get('users/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener usuario por ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario encontrado exitosamente',
+    type: User,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuario no encontrado',
+  })
+  async getUserById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: User
+  ) {
+    // Solo admin puede ver cualquier usuario
+    // Usuarios normales solo pueden ver su propio perfil
+    if (currentUser.role !== Role.ADMIN && id !== currentUser.id) {
+      throw new ForbiddenException('No tienes permiso para ver este usuario');
+    }
+    return this.authService.findById(id);
   }
 
   @Post('users')
@@ -130,9 +156,7 @@ export class AuthController {
   }
 
   @Delete('users/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles(Role.ADMIN)
-  @RequirePermissions(Permission.DELETE_USERS)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Eliminar usuario' })
   @ApiResponse({
     status: 200,

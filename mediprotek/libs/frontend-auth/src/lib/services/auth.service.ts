@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { LoginDto, AuthResponse, User } from '@mediprotek/shared-interfaces';
 import { environment } from '../../../../../apps/frontend/src/environments/environment';
+import { Router } from '@angular/router';
 
 export interface ApiResponse<T> {
   statusCode: number;
@@ -19,7 +20,7 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<AuthResponse | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private router: Router) {
     console.log('🔵 AuthService initialized with API URL:', this.API_URL);
     this.initializeUser();
   }
@@ -80,6 +81,29 @@ export class AuthService {
     console.log('🟡 Logging out user');
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
+    this.router.navigate(['/login']);
+  }
+
+  handleUserDeletion(): void {
+    console.log('🟡 Handling user deletion');
+    this.logout();
+  }
+
+  updateCurrentUser(updatedUser: User): void {
+    console.log('🟡 Updating current user:', updatedUser.email);
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser) {
+      const updatedAuthResponse = {
+        ...currentUser,
+        user: updatedUser
+      };
+      localStorage.setItem('currentUser', JSON.stringify({
+        data: updatedAuthResponse,
+        statusCode: 200,
+        message: 'User updated successfully'
+      }));
+      this.currentUserSubject.next(updatedAuthResponse);
+    }
   }
 
   isAuthenticated(): boolean {
@@ -92,7 +116,8 @@ export class AuthService {
     console.log('🔑 Getting token from current user...');
     const token = this.currentUserSubject.value?.accessToken;
     if (!token) {
-      console.warn('⚠️ No token found in current user');
+      console.log('🔴 No token found');
+      return null;
     } else {
       console.log('🟢 Token found');
     }
@@ -101,14 +126,5 @@ export class AuthService {
 
   getCurrentUser(): User | null {
     return this.currentUserSubject.value?.user || null;
-  }
-
-  updateCurrentUser(user: User): void {
-    const currentValue = this.currentUserSubject.value;
-    if (currentValue) {
-      const updatedValue = { ...currentValue, user };
-      localStorage.setItem('currentUser', JSON.stringify(updatedValue));
-      this.currentUserSubject.next(updatedValue);
-    }
   }
 }

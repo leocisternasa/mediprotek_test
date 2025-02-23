@@ -63,7 +63,7 @@ export class UserService {
   }
 
   getUserById(id: string): Observable<ApiResponse<User>> {
-    return this.http.get<ApiResponse<User>>(`${this.API_URL}/${id}`);
+    return this.http.get<ApiResponse<User>>(`${environment.apiUrl}/api/auth/users/${id}`);
   }
 
   createUser(user: Partial<User>): Observable<ApiResponse<User>> {

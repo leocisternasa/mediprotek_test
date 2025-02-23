@@ -1,4 +1,5 @@
-import { IsEmail, IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, MaxLength, IsEnum } from 'class-validator';
+import { Role } from '../enums/role.enum';
 
 export class UpdateUserDto {
   @IsEmail()
@@ -21,4 +22,8 @@ export class UpdateUserDto {
   @MinLength(6)
   @IsOptional()
   password?: string;
+
+  @IsEnum(Role)
+  @IsOptional()
+  role?: Role;
 }

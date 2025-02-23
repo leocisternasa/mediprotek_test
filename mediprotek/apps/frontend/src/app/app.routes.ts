@@ -1,7 +1,10 @@
 import { Route } from '@angular/router';
-import { LoginComponent } from '@libs/frontend-auth/src/lib/components/login/login.component';
-import { DashboardComponent } from '@libs/frontend-auth/src/lib/components/dashboard/dashboard.component';
-import { AuthGuard } from '@libs/frontend-auth/src/lib/guards/auth.guard';
+import {
+  LoginComponent,
+  DashboardComponent,
+  UserDetailComponent
+} from '@mediprotek/frontend-auth';
+import { AuthGuard } from '@mediprotek/frontend-auth';
 
 export const appRoutes: Route[] = [
   {
@@ -11,6 +14,11 @@ export const appRoutes: Route[] = [
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'users/:id',
+    component: UserDetailComponent,
     canActivate: [AuthGuard],
   },
   {

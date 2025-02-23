@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -14,51 +14,60 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { User, Role } from '@mediprotek/shared-interfaces';
+import { EditUserComponent } from '../edit-user/edit-user.component';
 
 @Component({
   selector: 'mediprotek-dashboard',
   template: `
-    <mat-toolbar color="primary">
-      <span>Dashboard</span>
-      <span class="spacer"></span>
-      <button mat-icon-button [matMenuTriggerFor]="menu">
-        <mat-icon>account_circle</mat-icon>
-      </button>
-      <mat-menu #menu="matMenu">
-        <button mat-menu-item>
-          <mat-icon>person</mat-icon>
-          <span>Perfil</span>
+    <!-- Header fijo -->
+    <div class="fixed-header">
+      <mat-toolbar color="primary">
+        <span>Dashboard</span>
+        <span class="spacer"></span>
+        <button mat-raised-button color="primary" (click)="createUser()" *ngIf="isAdmin">
+          <mat-icon>add</mat-icon>
+          Nuevo Usuario
         </button>
-        <button mat-menu-item (click)="logout()">
-          <mat-icon>exit_to_app</mat-icon>
-          <span>Cerrar Sesión</span>
+        <button mat-icon-button [matMenuTriggerFor]="menu" class="profile-button">
+          <mat-icon>account_circle</mat-icon>
         </button>
-      </mat-menu>
-    </mat-toolbar>
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item [routerLink]="['/users', currentUser.id]" *ngIf="currentUser">
+            <mat-icon>person</mat-icon>
+            <span>Mi Perfil</span>
+          </button>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>exit_to_app</mat-icon>
+            <span>Cerrar Sesión</span>
+          </button>
+        </mat-menu>
+      </mat-toolbar>
+    </div>
 
-    <div class="content">
-      <!-- Search and Actions -->
-      <div class="actions-row">
+    <!-- Contenido scrolleable -->
+    <div class="scrollable-content">
+      <!-- Search -->
+      <div class="search-container">
         <mat-form-field appearance="outline">
           <mat-label>Buscar usuarios</mat-label>
           <input matInput [formControl]="searchControl" placeholder="Buscar por nombre o email" />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-
-        <button mat-raised-button color="primary" (click)="createUser()" *ngIf="isAdmin">
-          <mat-icon>add</mat-icon>
-          Nuevo Usuario
-        </button>
       </div>
 
       <!-- Users Table -->
-      <div class="table-container mat-elevation-z8">
-        <table mat-table [dataSource]="users" matSort (matSortChange)="onSort($event)">
+      <div class="table-wrapper mat-elevation-z8">
+        <div class="table-container">
+          <table mat-table [dataSource]="users" matSort (matSortChange)="onSort($event)">
           <!-- Checkbox Column -->
           <ng-container matColumnDef="select" *ngIf="isAdmin">
             <th mat-header-cell *matHeaderCellDef>
@@ -94,7 +103,13 @@ import { User, Role } from '@mediprotek/shared-interfaces';
           <!-- Role Column -->
           <ng-container matColumnDef="role">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>Rol</th>
-            <td mat-cell *matCellDef="let user">{{ user.role }}</td>
+            <td mat-cell *matCellDef="let user">
+              <mat-chip-set>
+                <mat-chip [color]="user.role === Role.ADMIN ? 'accent' : 'primary'" selected>
+                  {{ user.role === Role.ADMIN ? 'Administrador' : 'Usuario' }}
+                </mat-chip>
+              </mat-chip-set>
+            </td>
           </ng-container>
 
           <!-- Actions Column -->
@@ -103,32 +118,39 @@ import { User, Role } from '@mediprotek/shared-interfaces';
             <td mat-cell *matCellDef="let user">
               <button
                 mat-icon-button
-                color="primary"
-                (click)="editUser(user)"
+                [matMenuTriggerFor]="actionMenu"
                 *ngIf="isAdmin || currentUser?.id === user.id"
               >
-                <mat-icon>edit</mat-icon>
+                <mat-icon>more_vert</mat-icon>
               </button>
-              <button
-                mat-icon-button
-                color="warn"
-                (click)="deleteUser(user)"
-                *ngIf="isAdmin || currentUser?.id === user.id"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
+              <mat-menu #actionMenu="matMenu">
+                <button mat-menu-item (click)="editUser(user)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Edición Rápida</span>
+                </button>
+                <button mat-menu-item [routerLink]="['/users', user.id]">
+                  <mat-icon>person</mat-icon>
+                  <span>Ver Detalle</span>
+                </button>
+                <button mat-menu-item (click)="deleteUser(user)" color="warn">
+                  <mat-icon>delete</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        </table>
+          </table>
+        </div>
 
         <mat-paginator
           [length]="totalUsers"
           [pageSize]="pageSize"
           [pageSizeOptions]="[5, 10, 25, 100]"
           (page)="onPageChange($event)"
+          class="sticky-paginator"
         >
         </mat-paginator>
       </div>
@@ -144,29 +166,61 @@ import { User, Role } from '@mediprotek/shared-interfaces';
   styles: [
     `
       :host {
-        display: block;
+        display: flex;
+        flex-direction: column;
         height: 100vh;
+        overflow: hidden;
+      }
+      .fixed-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+      }
+      .profile-button {
+        margin-left: 16px;
       }
       .spacer {
         flex: 1 1 auto;
       }
-      .content {
+      .scrollable-content {
+        margin-top: 64px; /* Altura del header */
         padding: 20px;
+        height: calc(100vh - 64px);
+        overflow-y: auto;
       }
-      .actions-row {
+      .search-container {
+        margin-bottom: 20px;
+      }
+      mat-form-field {
+        width: 100%;
+        max-width: 500px;
+      }
+      .table-wrapper {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        height: 500px; /* Altura fija para la tabla */
         margin-bottom: 20px;
       }
       .table-container {
-        position: relative;
-        min-height: 200px;
-        max-height: 600px;
+        flex: 1;
         overflow: auto;
+        min-height: 0;
       }
       table {
         width: 100%;
+      }
+      /* Hacer el header sticky */
+      .mat-mdc-header-row {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: white;
+      }
+      /* Asegurar que las filas de datos tengan altura suficiente */
+      .mat-mdc-row {
+        height: 48px; /* Altura estándar de Material */
       }
       .mat-column-select {
         width: 48px;
@@ -179,6 +233,13 @@ import { User, Role } from '@mediprotek/shared-interfaces';
       .bulk-actions {
         margin-top: 16px;
         text-align: right;
+      }
+      /* Hacer el paginador sticky */
+      .sticky-paginator {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        background: white;
       }
     `,
   ],
@@ -198,6 +259,10 @@ import { User, Role } from '@mediprotek/shared-interfaces';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatCheckboxModule,
+    MatDialogModule,
+    MatTooltipModule,
+    MatChipsModule,
+    RouterModule,
   ],
 })
 export class DashboardComponent implements OnInit {
@@ -211,6 +276,7 @@ export class DashboardComponent implements OnInit {
   selection = new SelectionModel<User>(true, []);
   currentUser: User | null = null;
   isAdmin = false;
+  Role = Role; // Para usar en el template
 
   // Pagination
   currentPage = 0;
@@ -225,6 +291,7 @@ export class DashboardComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit() {
@@ -312,72 +379,102 @@ export class DashboardComponent implements OnInit {
   }
 
   createUser() {
-    // Implementar navegación a la página de creación
-    console.log('Create user clicked');
+    const dialogRef = this.dialog.open(EditUserComponent, {
+      data: { isNew: true },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadUsers();
+      }
+    });
   }
 
   editUser(user: User) {
-    // Implementar navegación a la página de edición
-    console.log('Edit user clicked:', user);
+    const dialogRef = this.dialog.open(EditUserComponent, {
+      data: { user, isNew: false },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadUsers();
+      }
+    });
   }
 
-  deleteUser(user: User) {
-    if (confirm(`¿Estás seguro de que deseas eliminar al usuario ${user.firstName}?`)) {
-      console.log('🗑 Attempting to delete user:', user.id);
-      this.userService.deleteUser(user.id).subscribe({
-        next: (response) => {
-          console.log('✅ Delete response:', response);
-          this.snackBar.open('Usuario eliminado con éxito', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['success-snackbar'],
-          });
-          this.loadUsers();
+  deleteUser(user: User): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Confirmar eliminación',
+        message: `¿Estás seguro de que deseas eliminar al usuario ${user.firstName} ${user.lastName}?`,
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+      }
+    });
 
-          // Si el usuario eliminó su propia cuenta
-          if (this.currentUser?.id === user.id) {
-            this.authService.logout();
-            this.router.navigate(['/register']);
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        console.log('🗑 Attempting to delete user:', user.id);
+        this.userService.deleteUser(user.id).subscribe({
+          next: (response) => {
+            console.log('✅ Delete response:', response);
+            this.snackBar.open('Usuario eliminado con éxito', 'Cerrar', {
+              duration: 3000,
+            });
+            if (user.id === this.currentUser?.id) {
+              this.authService.logout();
+            } else {
+              this.loadUsers();
+            }
+          },
+          error: (error) => {
+            console.error('❌ Delete error:', error);
+            this.snackBar.open('Error al eliminar usuario', 'Cerrar', {
+              duration: 3000,
+            });
           }
-        },
-        error: (error) => {
-          console.error('❌ Error deleting user:', error);
-          const errorMessage = error.error?.message || 'Error al eliminar usuario';
-          this.snackBar.open(errorMessage, 'Cerrar', {
-            duration: 5000,
-            panelClass: ['error-snackbar'],
-          });
-        },
-      });
-    }
+        });
+      }
+    });
   }
 
-  deleteBulkUsers() {
+  deleteBulkUsers(): void {
     const selectedIds = this.selection.selected.map(user => user.id);
     if (selectedIds.length === 0) return;
 
-    if (confirm(`¿Estás seguro de que deseas eliminar ${selectedIds.length} usuarios?`)) {
-      this.userService.deleteUsers(selectedIds).subscribe({
-        next: () => {
-          this.snackBar.open('Usuarios eliminados con éxito', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['success-snackbar'],
-          });
-          this.selection.clear();
-          this.loadUsers();
-        },
-        error: error => {
-          console.error('Error deleting users:', error);
-          this.snackBar.open('Error al eliminar usuarios', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['error-snackbar'],
-          });
-        },
-      });
-    }
+    const bulkDeleteDialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Confirmar eliminación masiva',
+        message: `¿Estás seguro de que deseas eliminar ${selectedIds.length} usuarios?`,
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+      }
+    });
+
+    bulkDeleteDialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.userService.deleteUsers(selectedIds).subscribe({
+          next: () => {
+            this.snackBar.open('Usuarios eliminados con éxito', 'Cerrar', {
+              duration: 3000,
+            });
+            this.loadUsers();
+            this.selection.clear();
+          },
+          error: (error) => {
+            console.error('❌ Delete error:', error);
+            this.snackBar.open('Error al eliminar usuarios', 'Cerrar', {
+              duration: 3000,
+            });
+          }
+        });
+      }
+    });
   }
 
-  logout() {
+  logout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
   }
 }
