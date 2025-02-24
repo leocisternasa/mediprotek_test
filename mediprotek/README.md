@@ -1,154 +1,211 @@
-# Mediprotek - Sistema de Autenticación y Gestión de Usuarios
+# Proyecto Mediprotek
 
-## 💻 Guía de Instalación
+## Descripción
 
-### Requisitos Previos
+Proyecto monorepo desarrollado con Nx, que integra un frontend en Angular y microservicios backend en NestJS. El sistema implementa autenticación JWT y gestión de usuarios con diferentes niveles de acceso.
 
-1. **Software Necesario**
-   - Docker Desktop
+## Stack Tecnológico
+
+### Monorepo y Herramientas
+
+- Nx: Gestión de monorepo y herramientas de desarrollo
+- Docker: Contenedorización y servicios
+- Git: Control de versiones
+
+### Frontend
+
+- Angular 17
+- Angular Material
+- RxJS
+- TypeScript
+
+### Backend Microservicios
+
+- NestJS
+- TypeORM
+- PostgreSQL
+- RabbitMQ
+- JWT
+
+## Requisitos Previos
+
+1. **PostgreSQL**
+
+   - Base de datos relacional para almacenamiento
+   - Puertos por defecto: 5432
+
+2. **Docker Desktop**
+
+   - Necesario para RabbitMQ
+   - Gestión de contenedores
+
+3. **Nx (instalación global)**
+
+   ```bash
+   npm install -g nx
+   ```
+
+4. **Node.js y npm**
+   - Node.js v18 o superior
+   - npm v9 o superior
+
+## Guía de Instalación
+
+### Pasos Adicionales
+
+1. **Software Complementario**
    - Git
    - Node.js (v18 o superior)
    - npm (v9 o superior)
 
-### Pasos de Instalación
+## Instalación y Configuración
 
-1. **Clonar el Repositorio**
-   ```bash
-   git clone [URL_DEL_REPOSITORIO]
-   cd mediprotek
+### 1. Clonar el Repositorio
+
+```bash
+git clone https://github.com/leocisternasa/mediprotek_test.git
+cd mediprotek_test
+npm install
+```
+
+### 2. Configurar RabbitMQ
+
+```bash
+docker run -d --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  -e RABBITMQ_DEFAULT_USER=user \
+  -e RABBITMQ_DEFAULT_PASS=password \
+  rabbitmq:3-management
+```
+
+### 3. Configurar PostgreSQL
+
+1. Crear las bases de datos requeridas:
+
+   ```sql
+   CREATE DATABASE mediprotek_auth;
+   CREATE DATABASE mediprotek_users;
    ```
 
-2. **Instalar Dependencias del Proyecto**
-   ```bash
-   npm install
+2. Configurar archivos .env en los servicios:
+
+   **auth-service/.env**:
+
+   ```va en el archivo auth-service/.env , para comodidad se comparte en el repo
+
    ```
 
-3. **Configurar Variables de Entorno**
-   ```bash
-   # Copiar el archivo de ejemplo
-   cp .env.example .env
-   ```
-   Editar el archivo `.env` con los valores correctos:
-   ```env
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mediprotek
-   JWT_SECRET=tu_secret_key
-   JWT_REFRESH_SECRET=tu_refresh_secret_key
-   PORT=3000
+   **user-service/.env**:
+
+   ```va en el archivo auth-service/.env , para comodidad se comparte en el repo
+
    ```
 
-4. **Iniciar los Contenedores Docker**
-   ```bash
-   # Iniciar todos los servicios
-   docker-compose up -d
-   ```
-   Esto iniciará:
-   - PostgreSQL (puerto 5432)
-   - Redis (puerto 6379)
-   - Otros servicios necesarios
+### 4. Iniciar los Servicios
 
-5. **Verificar los Contenedores**
-   ```bash
-   # Verificar que los contenedores estén corriendo
-   docker ps
-   ```
+En terminales separadas, ejecutar:
 
-6. **Ejecutar Migraciones**
-   ```bash
-   # Esperar unos segundos a que la base de datos esté lista
-   npm run migration:run
-   ```
+```bash
+# Frontend (Puerto 4200)
+nx serve frontend
 
-7. **Iniciar los Microservicios**
+# API Gateway
+nx serve api-gateway
 
-   En terminales separadas, ejecutar:
+# Servicio de Autenticación
+nx serve auth-service
 
-   ```bash
-   # Terminal 1 - API Gateway
-   npm run start:api
+# Servicio de Usuarios
+nx serve user-service
+```
 
-   # Terminal 2 - Servicio de Autenticación
-   npm run start:auth
+## Funcionalidades y Características
 
-   # Terminal 3 - Servicio de Usuarios
-   npm run start:users
+### Autenticación y Autorización
 
-   # Terminal 4 - Frontend
-   npm run start:frontend
-   ```
+- Implementación de JWT para autenticación segura
+- Rutas protegidas en el dashboard
+- Roles de usuario: Admin y User
 
-### Verificación
+### Gestión de Usuarios
 
-Los servicios estarán disponibles en:
+1. **Administradores (ADMIN)**
 
-- Frontend: http://localhost:4200
-- API Gateway: http://localhost:3000
-- Servicio de Autenticación: http://localhost:3001
-- Servicio de Usuarios: http://localhost:3002
-- Swagger Docs: http://localhost:3000/api/docs
+   - CRUD completo de todos los usuarios
+   - Creación de nuevos usuarios y administradores
+   - Acceso total al dashboard
+
+2. **Usuarios (USER)**
+   - Gestión del perfil propio
+   - Sin permisos para crear nuevos usuarios
+   - Acceso limitado al dashboard
+
+### Registro Inicial
+
+- Acceso desde el link en la página de login
+- El primer usuario creado recibe rol de Admin
+- Acceso inmediato al dashboard después del registro
 
 ### Comandos Útiles
 
 ```bash
-# Ver logs de los contenedores
-docker-compose logs -f
+# Gestión de RabbitMQ
+docker stop rabbitmq          # Detener RabbitMQ
+docker start rabbitmq         # Iniciar RabbitMQ
+docker logs rabbitmq          # Ver logs
+docker ps | grep rabbitmq     # Verificar estado
 
-# Detener todos los servicios
-docker-compose down
-
-# Reiniciar un servicio específico
-docker-compose restart [servicio]
-
-# Reconstruir contenedores
-docker-compose up -d --build
+# Gestión de Servicios Nx
+nx reset                      # Limpiar cache de Nx
+nx run-many --target=serve --projects=api-gateway,auth-service,user-service,frontend  # Iniciar todos los servicios
+nx affected:test              # Ejecutar tests afectados
+nx graph                      # Ver dependencias del proyecto
 ```
 
-### Solución de Problemas
+### Solución de Problemas Comunes
 
-1. **Error de Conexión a la Base de Datos**
-   ```bash
-   # Verificar que PostgreSQL esté corriendo
-   docker ps | grep postgres
-   
-   # Ver logs de PostgreSQL
-   docker-compose logs postgres
-   ```
+1. **Bases de Datos**
 
-2. **Error en las Migraciones**
-   ```bash
-   # Resetear la base de datos
-   npm run migration:reset
-   
-   # Ejecutar migraciones nuevamente
-   npm run migration:run
-   ```
+   - Verificar que existan las bases de datos: mediprotek_auth y mediprotek_users
+   - Confirmar credenciales en archivos .env de auth-service y user-service
+   - Verificar que PostgreSQL esté corriendo en el puerto configurado
 
-3. **Problemas con los Puertos**
-   ```bash
-   # Verificar puertos en uso
-   netstat -an | grep LISTEN
-   
-   # Detener servicios que puedan estar usando los puertos
-   docker-compose down
-   ```
+2. **Microservicios**
 
-### Usuario de Prueba
+   - Asegurar que RabbitMQ esté corriendo y accesible
+   - Verificar que los archivos .env estén correctamente configurados
+   - Comprobar que los puertos no estén en uso
 
-Puedes usar las siguientes credenciales para probar la aplicación:
+3. **Autenticación**
+   - Para el primer uso, registrar un nuevo usuario desde el link en el login
+   - El primer usuario registrado tendrá rol de Admin
+   - Verificar las variables JWT_SECRET y JWT_REFRESH_SECRET en auth-service
 
-```
-Email: admin@example.com
-Contraseña: Admin123!
-```
+## Puertos y Endpoints
 
-## ⚠️ Consideraciones Importantes
+- Frontend: http://localhost:4200
+- API Gateway: http://localhost:3000
+- Auth Service: http://localhost:3001
+- User Service: http://localhost:3002
+- RabbitMQ Management: http://localhost:15672
+- PostgreSQL: 5432
 
-1. La aplicación usa cookies HttpOnly para el manejo de tokens
-2. Los tokens de acceso expiran cada 15 minutos
-3. Los tokens de refresh expiran cada 7 días
-4. Asegúrate de que todos los puertos necesarios estén disponibles
-5. El sistema está configurado para desarrollo local. Para producción, se deben ajustar las configuraciones de seguridad
+## Consideraciones Importantes
 
-## 📖 Documentación Adicional
+1. **Desarrollo**
 
-- La documentación completa de la API está disponible en Swagger: http://localhost:3000/api/docs
-- Para más detalles sobre la arquitectura y los servicios, consulta la carpeta `docs/`
+   - Nx debe estar instalado globalmente
+   - Docker Desktop debe estar corriendo
+   - PostgreSQL debe estar configurado correctamente
+
+2. **Seguridad**
+
+   - Las contraseñas se almacenan hasheadas
+   - JWT con refresh tokens implementado
+   - Rutas protegidas por roles
+
+3. **Mantenimiento**
+   - Usar los comandos de Nx para gestionar el monorepo
+   - Mantener actualizados los archivos .env
+   - Revisar los logs para debugging
