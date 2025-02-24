@@ -9,13 +9,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { User } from './entities/user.entity';
 import { AuthService } from './services/auth.service';
 import { AuthController } from './controllers/auth.controller';
-import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
+import {
+  RABBITMQ_CONFIG,
+  RABBITMQ_URI,
+} from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env'
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -36,7 +39,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: '20h' },
       }),
       inject: [ConfigService],
     }),
@@ -50,7 +53,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
             urls: [(configService.get('RABBITMQ_URI') || RABBITMQ_URI) as string],
             queue: RABBITMQ_CONFIG.queues.userService,
             queueOptions: {
-              durable: true
+              durable: true,
             },
           },
         }),

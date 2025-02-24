@@ -26,7 +26,7 @@ import {
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: '3h',
+          expiresIn: '20h',
         },
       }),
       inject: [ConfigService],

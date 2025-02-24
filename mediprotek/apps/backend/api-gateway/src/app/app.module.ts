@@ -6,20 +6,23 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
+import {
+  RABBITMQ_CONFIG,
+  RABBITMQ_URI,
+} from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env'
+      envFilePath: '.env',
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: '20h' },
       }),
       inject: [ConfigService],
     }),
@@ -33,7 +36,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
             urls: [(configService.get('RABBITMQ_URI') || RABBITMQ_URI) as string],
             queue: RABBITMQ_CONFIG.queues.authService,
             queueOptions: {
-              durable: true
+              durable: true,
             },
           },
         }),
@@ -48,7 +51,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
             urls: [(configService.get('RABBITMQ_URI') || RABBITMQ_URI) as string],
             queue: RABBITMQ_CONFIG.queues.userService,
             queueOptions: {
-              durable: true
+              durable: true,
             },
           },
         }),

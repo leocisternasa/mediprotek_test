@@ -12,7 +12,7 @@ import { JwtCookieGuard } from './guards/jwt-cookie.guard';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: '3h',
+          expiresIn: '20h',
         },
       }),
       inject: [ConfigService],

@@ -27,17 +27,19 @@ export class AuthService {
 
     try {
       console.log('📡 Starting registration for:', registerUserDto.email);
-      
+
       // Primero creamos el usuario en el user-service y obtenemos su contraseña hasheada
       console.log('📡 Sending registration to user-service:', {
         email: registerUserDto.email,
-        password: registerUserDto.password?.substring(0, 3) + '...'
+        password: registerUserDto.password?.substring(0, 3) + '...',
       });
 
-      const response = await this.userServiceClient.send(UserEventPatterns.CREATE_USER, registerUserDto).toPromise();
-      console.log('✅ User created in user-service:', { 
-        id: response.id, 
-        email: response.email
+      const response = await this.userServiceClient
+        .send(UserEventPatterns.CREATE_USER, registerUserDto)
+        .toPromise();
+      console.log('✅ User created in user-service:', {
+        id: response.id,
+        email: response.email,
       });
 
       // Usamos la misma contraseña sin hashear del registro original
@@ -47,19 +49,19 @@ export class AuthService {
       const user = this.userRepository.create({
         ...registerUserDto,
         id: response.id,
-        password: registerUserDto.password // Usamos la contraseña original
+        password: registerUserDto.password, // Usamos la contraseña original
       });
 
       console.log('✅ User to be saved in auth-service:', {
         id: user.id,
-        email: user.email
+        email: user.email,
       });
 
       savedUser = await this.userRepository.save(user);
-      console.log('✅ User created in auth-service:', { 
-        id: savedUser.id, 
+      console.log('✅ User created in auth-service:', {
+        id: savedUser.id,
         email: savedUser.email,
-        hasPassword: !!savedUser.password
+        hasPassword: !!savedUser.password,
       });
 
       // Generar tokens para el nuevo usuario
@@ -86,7 +88,7 @@ export class AuthService {
 
   async login(loginUserDto: LoginUserCommand) {
     console.log('📡 Login attempt for:', loginUserDto.email, {
-      providedPassword: loginUserDto.password?.substring(0, 3) + '...'
+      providedPassword: loginUserDto.password?.substring(0, 3) + '...',
     });
 
     // Buscamos el usuario incluyendo el password
@@ -96,12 +98,12 @@ export class AuthService {
       .addSelect('user.password')
       .getOne();
 
-    console.log('📡 User found:', { 
-      id: user?.id, 
+    console.log('📡 User found:', {
+      id: user?.id,
       email: user?.email,
-      storedPassword: user?.password?.substring(0, 20) + '...'
+      storedPassword: user?.password?.substring(0, 20) + '...',
     });
-    
+
     if (!user) {
       console.warn('⚠️ User not found:', loginUserDto.email);
       throw new UnauthorizedException('Invalid credentials');
@@ -114,9 +116,9 @@ export class AuthService {
 
     console.log('📡 Comparing passwords:', {
       provided: loginUserDto.password?.substring(0, 3) + '...',
-      stored: user.password?.substring(0, 20) + '...'
+      stored: user.password?.substring(0, 20) + '...',
     });
-    
+
     const isPasswordValid = await bcrypt.compare(loginUserDto.password, user.password);
     console.log('📡 Password comparison result:', isPasswordValid);
 
@@ -150,7 +152,17 @@ export class AuthService {
 
       const user = await this.userRepository.findOne({
         where: { id: decoded.sub },
-        select: ['id', 'email', 'role', 'firstName', 'lastName', 'createdAt', 'updatedAt', 'refreshToken', 'refreshTokenExpires'],
+        select: [
+          'id',
+          'email',
+          'role',
+          'firstName',
+          'lastName',
+          'createdAt',
+          'updatedAt',
+          'refreshToken',
+          'refreshTokenExpires',
+        ],
       });
 
       if (!user || !user.refreshToken || user.refreshToken !== refreshTokenDto.refreshToken) {
@@ -235,7 +247,7 @@ export class AuthService {
         },
         {
           secret: process.env.JWT_ACCESS_SECRET,
-          expiresIn: '3h',
+          expiresIn: '20h',
         },
       ),
       this.jwtService.signAsync(
