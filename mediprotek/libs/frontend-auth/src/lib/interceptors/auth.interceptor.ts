@@ -70,12 +70,12 @@ export class AuthInterceptor implements HttpInterceptor {
       clearTimeout(this.tokenExpirationTimer);
     }
 
-    // Calcular cuando expira el token (20 horas antes de la expiración real)
+    // Calcular cuando expira el token (15 minutos antes de la expiración real)
     const token = this.authService.getAccessToken();
     if (token) {
       const tokenData = this.parseJwt(token);
       if (tokenData && tokenData.exp) {
-        const expiresIn = tokenData.exp * 1000 - Date.now() - 20 * 60 * 60 * 1000; // 20 horas antes
+        const expiresIn = tokenData.exp * 1000 - Date.now() - 15 * 60 * 1000; // 15 minutos antes
         if (expiresIn > 0) {
           this.tokenExpirationTimer = setTimeout(() => {
             this.authService.refreshToken();
