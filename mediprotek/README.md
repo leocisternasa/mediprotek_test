@@ -65,6 +65,7 @@ Proyecto monorepo desarrollado con Nx, que integra un frontend en Angular y micr
 ```bash
 git clone https://github.com/leocisternasa/mediprotek_test.git
 cd mediprotek_test
+cd mediprotek
 npm install
 ```
 
