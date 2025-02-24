@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -15,6 +16,17 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env'
+    }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: '15m',
+        },
+      }),
+      inject: [ConfigService],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -50,6 +62,6 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
     ]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy],
+  providers: [UserService, JwtStrategy, JwtAuthGuard],
 })
 export class AppModule {}

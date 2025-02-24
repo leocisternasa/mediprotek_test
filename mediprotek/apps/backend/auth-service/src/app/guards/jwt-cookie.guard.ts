@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
+export class JwtCookieGuard extends AuthGuard('jwt') {
   constructor(private jwtService: JwtService) {
     super();
   }

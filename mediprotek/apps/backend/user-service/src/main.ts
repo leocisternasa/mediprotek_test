@@ -6,13 +6,20 @@ import {
   RABBITMQ_CONFIG,
   RABBITMQ_URI,
 } from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
+import cookieParser = require('cookie-parser');
 
 async function bootstrap() {
   // Crear la aplicación HTTP
   const app = await NestFactory.create(AppModule);
   
-  // Habilitar CORS
-  app.enableCors();
+  // Habilitar CORS con soporte para cookies
+  app.enableCors({
+    origin: process.env['FRONTEND_URL'] || 'http://localhost:4200',
+    credentials: true
+  });
+
+  // Configurar cookie-parser
+  app.use(cookieParser());
 
   // Configurar prefijo global
   app.setGlobalPrefix('api');

@@ -44,3 +44,8 @@ export interface RefreshTokenResponse {
   accessToken: string;
   refreshToken: string;
 }
+
+// Estado de autenticación en el frontend (sin tokens)
+export interface AuthState {
+  user: UserResponse;
+}

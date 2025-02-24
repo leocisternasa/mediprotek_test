@@ -14,30 +14,22 @@ import { Router } from '@angular/router';
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
   private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  private refreshTokenSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   constructor(private authService: AuthService, private router: Router) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     console.log('📥 Intercepting request to:', request.url);
-    const token = this.authService.getToken();
-    console.log('🔑 Current token:', token ? 'Present' : 'Missing');
 
-    if (token) {
-      const authHeader = `Bearer ${token}`;
-      console.log('🔑 Adding JWT token to request');
-      request = request.clone({
-        setHeaders: {
-          Authorization: authHeader
-        }
-      });
-      console.log('🟢 Request headers:', {
-        url: request.url,
-        method: request.method,
-        authHeader: request.headers.get('Authorization')
-      });
-    } else {
-      console.warn('⚠️ No token available for request to:', request.url);
-    }
+    // Asegurarnos que todas las peticiones incluyan las cookies
+    request = request.clone({
+      withCredentials: true
+    });
+
+    console.log('🟢 Request configured with credentials:', {
+      url: request.url,
+      method: request.method,
+      withCredentials: request.withCredentials
+    });
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
@@ -53,14 +45,14 @@ export class JwtInterceptor implements HttpInterceptor {
   private handle401Error(request: HttpRequest<any>, next: HttpHandler) {
     if (!this.isRefreshing) {
       this.isRefreshing = true;
-      this.refreshTokenSubject.next(null);
+      this.refreshTokenSubject.next(false);
 
       return this.authService.refreshToken().pipe(
-        switchMap((response) => {
+        switchMap(() => {
           this.isRefreshing = false;
-          this.refreshTokenSubject.next(response.accessToken);
-          
-          return next.handle(this.addToken(request, response.accessToken));
+          this.refreshTokenSubject.next(true);
+          // Las cookies se actualizan automáticamente
+          return next.handle(request);
         }),
         catchError((error) => {
           this.isRefreshing = false;
@@ -73,17 +65,11 @@ export class JwtInterceptor implements HttpInterceptor {
     }
 
     return this.refreshTokenSubject.pipe(
-      filter(token => token !== null),
+      filter(refreshed => refreshed),
       take(1),
-      switchMap(token => next.handle(this.addToken(request, token)))
+      switchMap(() => next.handle(request))
     );
   }
 
-  private addToken(request: HttpRequest<any>, token: string) {
-    return request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  }
+
 }

@@ -1,4 +1,5 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Get, Request } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Get, Request, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { RequestWithUser } from '../interfaces/jwt-payload.interface';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { MessagePattern, EventPattern, Payload } from '@nestjs/microservices';
@@ -75,23 +76,84 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async httpLogin(@Body() data: LoginUserCommand) {
-    return this.authService.login(data);
+  async httpLogin(
+    @Body() data: LoginUserCommand,
+    @Res({ passthrough: true }) response: ExpressResponse
+  ) {
+    const auth = await this.authService.login(data);
+
+    // Configurar cookie para access token
+    response.cookie('access_token', auth.data.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000 // 15 minutos
+    });
+
+    // Configurar cookie para refresh token
+    response.cookie('refresh_token', auth.data.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+    });
+
+    // No enviar tokens en la respuesta
+    const { accessToken, refreshToken, ...userInfo } = auth.data;
+    return { statusCode: HttpStatus.OK, message: 'Login successful', data: userInfo };
   }
+
+
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async httpRefreshToken(@Body() data: RefreshTokenCommand) {
-    return this.authService.refreshToken(data);
+  async httpRefreshToken(
+    @Req() request: ExpressRequest,
+    @Res({ passthrough: true }) response: ExpressResponse
+  ) {
+    const tokenFromCookie = request.cookies['refresh_token'];
+    if (!tokenFromCookie) {
+      throw new UnauthorizedException('No refresh token provided');
+    }
+
+    try {
+      const auth = await this.authService.refreshToken({ refreshToken: tokenFromCookie });
+      
+      response.cookie('access_token', auth.data.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000 // 15 minutos
+      });
+
+      // No enviar tokens en la respuesta
+      const { accessToken, refreshToken, ...userInfo } = auth.data;
+      return { statusCode: HttpStatus.OK, message: 'Token refreshed', data: userInfo };
+    } catch (error) {
+      // Si hay error, limpiar las cookies
+      response.clearCookie('access_token');
+      response.clearCookie('refresh_token');
+      throw error;
+    }
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async httpLogout(@Request() req: RequestWithUser) {
+  async httpLogout(
+    @Request() req: RequestWithUser,
+    @Res({ passthrough: true }) response: ExpressResponse
+  ) {
     await this.authService.logout(req.user.id);
+    
+    // Limpiar cookies
+    response.clearCookie('access_token');
+    response.clearCookie('refresh_token');
+    
     return { message: 'Logged out successfully' };
   }
+
+
 
   // RabbitMQ Message Patterns
   @MessagePattern(AuthEventPatterns.REGISTER_USER)
