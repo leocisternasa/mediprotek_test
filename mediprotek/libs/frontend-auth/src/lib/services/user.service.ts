@@ -33,13 +33,13 @@ export interface UserFilters {
   providedIn: 'root',
 })
 export class UserService {
-  private readonly API_URL = `${environment.apiUrl}/api/auth/users`;
+  private readonly API_URL = `${environment.userApiUrl}/api/users`;
 
   constructor(private http: HttpClient) {
     console.log('🟡 UserService initialized with API URL:', this.API_URL);
   }
 
-  getUsers(filters: UserFilters = {}): Observable<ApiResponse<UsersResponse>> {
+  getUsers(filters: UserFilters = {}): Observable<UserPaginatedResponse> {
     console.log('📥 Getting users with filters:', filters);
     let params = new HttpParams();
 
@@ -59,23 +59,23 @@ export class UserService {
       params = params.set('sortDirection', filters.sortDirection);
     }
 
-    return this.http.get<ApiResponse<UsersResponse>>(this.API_URL, { params });
+    return this.http.get<UserPaginatedResponse>(this.API_URL, { params });
   }
 
-  getUserById(id: string): Observable<ApiResponse<User>> {
-    return this.http.get<ApiResponse<User>>(`${environment.apiUrl}/api/auth/users/${id}`);
+  getUserById(id: string): Observable<User> {
+    return this.http.get<User>(`${this.API_URL}/${id}`);
   }
 
-  createUser(user: Partial<User>): Observable<ApiResponse<User>> {
-    return this.http.post<ApiResponse<User>>(this.API_URL, user);
+  createUser(user: Partial<User>): Observable<User> {
+    return this.http.post<User>(this.API_URL, user);
   }
 
-  updateUser(id: string, user: Partial<User>): Observable<ApiResponse<User>> {
-    return this.http.put<ApiResponse<User>>(`${this.API_URL}/${id}`, user);
+  updateUser(id: string, user: Partial<User>): Observable<User> {
+    return this.http.put<User>(`${this.API_URL}/${id}`, user);
   }
 
-  deleteUser(id: string): Observable<ApiResponse<void>> {
-    return this.http.delete<ApiResponse<void>>(`${this.API_URL}/${id}`);
+  deleteUser(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.API_URL}/${id}`);
   }
 
   deleteUsers(ids: string[]): Observable<void> {

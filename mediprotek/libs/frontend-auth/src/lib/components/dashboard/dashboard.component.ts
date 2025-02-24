@@ -41,7 +41,7 @@ import { EditUserComponent } from '../edit-user/edit-user.component';
           <mat-icon>account_circle</mat-icon>
         </button>
         <mat-menu #menu="matMenu">
-          <button mat-menu-item [routerLink]="['/users', currentUser.id]" *ngIf="currentUser">
+          <button mat-menu-item routerLink="/profile" *ngIf="currentUser">
             <mat-icon>person</mat-icon>
             <span>Mi Perfil</span>
           </button>
@@ -128,7 +128,7 @@ import { EditUserComponent } from '../edit-user/edit-user.component';
                   <mat-icon>edit</mat-icon>
                   <span>Edición Rápida</span>
                 </button>
-                <button mat-menu-item [routerLink]="['/users', user.id]">
+                <button mat-menu-item [routerLink]="currentUser?.id === user.id ? '/profile' : ['/users', user.id]">
                   <mat-icon>person</mat-icon>
                   <span>Ver Detalle</span>
                 </button>
@@ -343,28 +343,20 @@ export class DashboardComponent implements OnInit {
     };
     console.log('🔍 Filters:', filters);
 
-    this.userService.getUsers(filters).subscribe({
-      next: response => {
+    this.userService.getUsers(filters).subscribe(
+      response => {
         console.log('✅ Users loaded successfully:', response);
-        if (response.data && response.data.users) {
-          this.users = response.data.users;
-          this.totalUsers = response.data.total;
-          this.selection.clear();
-          console.log('📊 Current users:', this.users);
-        } else {
-          console.error('❌ No users data in response:', response);
-          this.users = [];
-          this.totalUsers = 0;
-        }
+        this.users = response.users;
+        this.totalUsers = response.total;
+        this.selection.clear();
+        console.log('📊 Current users:', this.users);
       },
-      error: error => {
+      error => {
         console.error('Error loading users:', error);
-        this.snackBar.open('Error al cargar usuarios', 'Cerrar', {
-          duration: 3000,
-          panelClass: ['error-snackbar'],
-        });
-      },
-    });
+        this.users = [];
+        this.totalUsers = 0;
+      }
+    );
   }
 
   onPageChange(event: PageEvent) {
@@ -441,25 +433,33 @@ export class DashboardComponent implements OnInit {
   }
 
   deleteBulkUsers(): void {
-    const selectedIds = this.selection.selected.map(user => user.id);
-    if (selectedIds.length === 0) return;
+    const selectedUsers = this.selection.selected;
+    if (selectedUsers.length === 0) return;
 
     const bulkDeleteDialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Confirmar eliminación masiva',
-        message: `¿Estás seguro de que deseas eliminar ${selectedIds.length} usuarios?`,
+        message: `¿Estás seguro de que deseas eliminar ${selectedUsers.length} ${selectedUsers.length === 1 ? 'usuario' : 'usuarios'}?`,
         confirmText: 'Eliminar',
-        cancelText: 'Cancelar'
+        cancelText: 'Cancelar',
+        users: selectedUsers.map(user => ({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email
+        }))
       }
     });
 
     bulkDeleteDialogRef.afterClosed().subscribe(result => {
       if (result) {
+        const selectedIds = selectedUsers.map(user => user.id);
         this.userService.deleteUsers(selectedIds).subscribe({
           next: () => {
-            this.snackBar.open('Usuarios eliminados con éxito', 'Cerrar', {
-              duration: 3000,
-            });
+            this.snackBar.open(
+              `${selectedUsers.length} ${selectedUsers.length === 1 ? 'usuario eliminado' : 'usuarios eliminados'} con éxito`,
+              'Cerrar',
+              { duration: 3000 }
+            );
             this.loadUsers();
             this.selection.clear();
           },

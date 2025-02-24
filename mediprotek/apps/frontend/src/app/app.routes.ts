@@ -1,9 +1,7 @@
 import { Route } from '@angular/router';
-import {
-  LoginComponent,
-  DashboardComponent,
-  UserDetailComponent
-} from '@mediprotek/frontend-auth';
+import { LoginComponent } from '@mediprotek/frontend-auth';
+import { DashboardComponent } from '@mediprotek/frontend-auth';
+import { ProfileComponent } from '@libs/frontend-auth/src/lib/components/profile/profile.component';
 import { AuthGuard } from '@mediprotek/frontend-auth';
 
 export const appRoutes: Route[] = [
@@ -18,7 +16,12 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'users/:id',
-    component: UserDetailComponent,
+    component: ProfileComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'profile',
+    component: ProfileComponent,
     canActivate: [AuthGuard],
   },
   {

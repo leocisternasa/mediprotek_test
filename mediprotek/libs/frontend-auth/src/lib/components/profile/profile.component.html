@@ -1,0 +1,89 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <h2>{{ isCurrentUser ? 'Mi Perfil' : 'Detalle de Usuario' }}</h2>
+    <button 
+      *ngIf="!isEditing"
+      (click)="startEditing()"
+      class="edit-profile-btn"
+    >
+      <i class="fas fa-edit"></i>
+      Editar Perfil
+    </button>
+  </div>
+
+  <div class="profile-section" *ngIf="user">
+    <div class="profile-field">
+      <label>Nombre:</label>
+      <div class="field-content">
+        <input
+          *ngIf="isEditing"
+          [(ngModel)]="tempValues['firstName']"
+          type="text"
+          [value]="user?.firstName"
+          (keyup.enter)="saveChanges()"
+        />
+        <span *ngIf="!isEditing">{{ user?.firstName }}</span>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <label>Apellido:</label>
+      <div class="field-content">
+        <input
+          *ngIf="isEditing"
+          [(ngModel)]="tempValues['lastName']"
+          type="text"
+          [value]="user?.lastName"
+          (keyup.enter)="saveChanges()"
+        />
+        <span *ngIf="!isEditing">{{ user?.lastName }}</span>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <label>Email:</label>
+      <div class="field-content">
+        <input
+          *ngIf="isEditing"
+          [(ngModel)]="tempValues['email']"
+          type="email"
+          [value]="user?.email"
+          (keyup.enter)="saveChanges()"
+        />
+        <span *ngIf="!isEditing">{{ user?.email }}</span>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <label>Rol:</label>
+      <div class="field-content">
+        <mat-select
+          *ngIf="isEditing && (isCurrentUser ? user?.role === Role.ADMIN : currentUser?.role === Role.ADMIN)"
+          [(ngModel)]="tempValues['role']"
+          [value]="user?.role"
+        >
+          <mat-option *ngFor="let role of roles" [value]="role">
+            {{ role === Role.ADMIN ? 'Administrador' : 'Usuario' }}
+          </mat-option>
+        </mat-select>
+        <span *ngIf="!isEditing || (isCurrentUser ? user?.role !== Role.ADMIN : currentUser?.role !== Role.ADMIN)">
+          {{ user?.role === Role.ADMIN ? 'Administrador' : 'Usuario' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <ng-container *ngIf="isEditing">
+        <button (click)="saveChanges()" class="save-btn">
+          Guardar cambios
+        </button>
+        <button (click)="cancelEditing()" class="cancel-btn">
+          Volver sin guardar
+        </button>
+      </ng-container>
+      <button *ngIf="!isEditing" routerLink="/dashboard" class="back-btn">
+        Volver
+      </button>
+    </div>
+  </div>
+</div>

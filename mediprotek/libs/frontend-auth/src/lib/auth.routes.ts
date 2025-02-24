@@ -3,25 +3,31 @@ import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { UserDetailComponent } from './components/user-detail/user-detail.component';
 import { AuthGuard } from './guards/auth.guard';
+import { ProfileComponent } from './components/profile/profile.component';
 
 export const authRoutes: Routes = [
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
   },
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
   },
   {
     path: 'users/:id',
-    component: UserDetailComponent,
-    canActivate: [AuthGuard]
+    component: ProfileComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'profile',
+    component: ProfileComponent,
+    canActivate: [AuthGuard],
   },
   {
     path: '',
     redirectTo: 'dashboard',
-    pathMatch: 'full'
-  }
+    pathMatch: 'full',
+  },
 ];

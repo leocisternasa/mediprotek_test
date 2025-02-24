@@ -1,0 +1,23 @@
+<div class="dashboard-container">
+  <mat-toolbar color="primary">
+    <span>Dashboard</span>
+    <span class="spacer"></span>
+    <button mat-icon-button [matMenuTriggerFor]="userMenu">
+      <i class="fas fa-user"></i>
+    </button>
+    <mat-menu #userMenu="matMenu">
+      <a mat-menu-item routerLink="/profile">
+        <i class="fas fa-id-card"></i>
+        <span>Mi Perfil</span>
+      </a>
+      <button mat-menu-item (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Cerrar Sesión</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+
+  <div class="content">
+    <!-- Resto del contenido del dashboard -->
+  </div>
+</div>

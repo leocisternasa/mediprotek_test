@@ -15,6 +15,12 @@ import * as bcrypt from 'bcrypt';
 
 @Entity('users')
 export class User implements IUser {
+  @ApiHideProperty()
+  @Column({ nullable: true, select: false })
+  refreshToken?: string;
+
+  @Column({ nullable: true, name: 'refresh_token_expires' })
+  refreshTokenExpires?: Date;
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
     description: 'ID único del usuario (UUID)',

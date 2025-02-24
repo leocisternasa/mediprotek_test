@@ -188,29 +188,49 @@ export class EditUserComponent implements OnInit {
       delete userData.role;
     }
 
-    const operation = this.isNewUser
-      ? this.userService.createUser(userData)
-      : this.userService.updateUser(this.data.user!.id, userData);
-
-    operation.subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        this.snackBar.open(
-          `Usuario ${this.isNewUser ? 'creado' : 'actualizado'} con éxito`,
-          'Cerrar',
-          { duration: 3000 }
-        );
-        this.dialogRef.close(response);
-      },
-      error: (error) => {
-        this.isLoading = false;
-        this.snackBar.open(
-          error.error?.message || 'Error al procesar la solicitud',
-          'Cerrar',
-          { duration: 5000 }
-        );
-      },
-    });
+    if (this.isNewUser) {
+      // Registro de nuevo usuario a través del auth service
+      this.authService.register(userData).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.snackBar.open(
+            response.message || 'Usuario creado con éxito',
+            'Cerrar',
+            { duration: 3000 }
+          );
+          this.dialogRef.close(true);
+        },
+        error: (error: any) => {
+          this.isLoading = false;
+          this.snackBar.open(
+            error.error?.message || 'Error al crear usuario',
+            'Cerrar',
+            { duration: 5000 }
+          );
+        }
+      });
+    } else {
+      // Actualización de usuario existente a través del user service
+      this.userService.updateUser(this.data.user!.id, userData).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.snackBar.open(
+            'Usuario actualizado con éxito',
+            'Cerrar',
+            { duration: 3000 }
+          );
+          this.dialogRef.close(true);
+        },
+        error: (error: any) => {
+          this.isLoading = false;
+          this.snackBar.open(
+            error.error?.message || 'Error al actualizar usuario',
+            'Cerrar',
+            { duration: 5000 }
+          );
+        }
+      });
+    }
   }
 
   onCancel() {

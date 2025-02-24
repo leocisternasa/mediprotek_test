@@ -52,6 +52,15 @@ import { User, Role } from '@mediprotek/shared-interfaces';
                 >
                   <mat-icon>edit</mat-icon>
                 </button>
+                <button
+                  *ngIf="editingField['firstName']"
+                  mat-icon-button
+                  matSuffix
+                  (click)="confirmEdit('firstName')"
+                  type="button"
+                >
+                  <mat-icon color="primary">check_circle</mat-icon>
+                </button>
                 <mat-error *ngIf="userForm.get('firstName')?.hasError('required')">
                   El nombre es requerido
                 </mat-error>
@@ -73,6 +82,15 @@ import { User, Role } from '@mediprotek/shared-interfaces';
                   [disabled]="editingField['lastName']"
                 >
                   <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  *ngIf="editingField['lastName']"
+                  mat-icon-button
+                  matSuffix
+                  (click)="confirmEdit('lastName')"
+                  type="button"
+                >
+                  <mat-icon color="primary">check_circle</mat-icon>
                 </button>
                 <mat-error *ngIf="userForm.get('lastName')?.hasError('required')">
                   El apellido es requerido
@@ -97,6 +115,15 @@ import { User, Role } from '@mediprotek/shared-interfaces';
                 [disabled]="editingField['email']"
               >
                 <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                *ngIf="editingField['email']"
+                mat-icon-button
+                matSuffix
+                (click)="confirmEdit('email')"
+                type="button"
+              >
+                <mat-icon color="primary">check_circle</mat-icon>
               </button>
               <mat-error *ngIf="userForm.get('email')?.hasError('required')">
                 El email es requerido
@@ -123,6 +150,15 @@ import { User, Role } from '@mediprotek/shared-interfaces';
                 [disabled]="editingField['password']"
               >
                 <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                *ngIf="editingField['password']"
+                mat-icon-button
+                matSuffix
+                (click)="confirmEdit('password')"
+                type="button"
+              >
+                <mat-icon color="primary">check_circle</mat-icon>
               </button>
               <mat-error *ngIf="userForm.get('password')?.hasError('minlength')">
                 La contraseña debe tener al menos 6 caracteres
@@ -243,7 +279,13 @@ export class UserDetailComponent implements OnInit {
 
     this.isCurrentUser = userId === currentUser.id;
 
-    // Si no es admin y no es su propio perfil, redirigir
+    // Si es su propio perfil, redirigir a /profile
+    if (this.isCurrentUser) {
+      this.router.navigate(['/profile']);
+      return;
+    }
+
+    // Si no es admin y no es su propio perfil, redirigir a dashboard
     if (!this.isCurrentUser && currentUser.role !== Role.ADMIN) {
       this.router.navigate(['/dashboard']);
       return;
@@ -264,11 +306,11 @@ export class UserDetailComponent implements OnInit {
   private loadUser(userId: string) {
     this.userService.getUserById(userId).subscribe({
       next: response => {
-        this.user = response.data;
+        this.user = response;
         this.userForm.patchValue({
-          firstName: response.data.firstName,
-          lastName: response.data.lastName,
-          email: response.data.email,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          email: response.email,
         });
       },
       error: (error: any) => {
@@ -302,7 +344,7 @@ export class UserDetailComponent implements OnInit {
 
           // Si el usuario actualizó su propio perfil, actualizar el currentUser
           if (this.isCurrentUser) {
-            this.authService.updateCurrentUser(response.data);
+            this.authService.updateCurrentUser(response);
           }
           this.router.navigate(['/dashboard']);
 
@@ -338,6 +380,18 @@ export class UserDetailComponent implements OnInit {
     // Activar la edición del campo si no está activo
     if (!this.editingField[field]) {
       this.editingField[field] = true;
+    }
+  }
+
+  confirmEdit(field: string) {
+    // Validar el campo antes de confirmar
+    const control = this.userForm.get(field);
+    if (control?.valid) {
+      this.editingField[field] = false;
+    } else {
+      this.snackBar.open('Por favor corrige los errores antes de confirmar', 'Cerrar', {
+        duration: 3000,
+      });
     }
   }
 }
