@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, of, Subject } from 'rxjs';
 import { LoginDto, AuthResponse, User, UserResponse } from '@mediprotek/shared-interfaces';
 import { environment } from '../../../../../apps/frontend/src/environments/environment';
 import { Router } from '@angular/router';
@@ -20,9 +20,42 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<AuthResponse | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
+  // Eventos de usuario
+  private userEvents = new Subject<{ type: string; id: string; deletedAt?: string }>();
+  userEvents$ = this.userEvents.asObservable();
+
   constructor(private http: HttpClient, private router: Router) {
     console.log('🔵 AuthService initialized with API URL:', this.API_URL);
     this.initializeUser();
+    this.setupEventHandlers();
+  }
+
+  private setupEventHandlers(): void {
+    this.userEvents$.subscribe(event => {
+      console.log('📬 Received user event:', event);
+      switch (event.type) {
+        case 'user.deleted':
+          this.handleUserDeleted(event.id);
+          break;
+        default:
+          console.warn('⚠️ Unknown event type:', event.type);
+      }
+    });
+  }
+
+  private handleUserDeleted(userId: string): void {
+    console.log('🗑 Handling user deleted event for:', userId);
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser?.user.id === userId) {
+      console.log('🗑 Current user was deleted, logging out...');
+      this.clearStorage();
+      this.router.navigate(['/login']);
+    }
+  }
+
+  // Método público para emitir eventos
+  emitUserEvent(event: { type: string; id: string; deletedAt?: string }): void {
+    this.userEvents.next(event);
   }
 
   private initializeUser(): void {
@@ -96,12 +129,27 @@ export class AuthService {
     );
   }
 
+  clearStorage(): void {
+    console.log('🟡 Clearing storage');
+    localStorage.clear();
+    this.currentUserSubject.next(null);
+  }
+
   private handleLogoutSuccess(): void {
     console.log('🟡 Logging out user');
-    localStorage.clear(); // Limpiamos todo el localStorage
+    this.clearStorage(); // Usar el nuevo método
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
     console.log('✅ User logged out and redirected to login');
+  }
+
+  deleteAuthUser(userId: string): Observable<{ message: string }> {
+    console.log('🗑 Deleting user from auth service:', userId);
+    return this.http.delete<{ message: string }>(`${this.API_URL}/users/${userId}`).pipe(
+      tap(response => {
+        console.log('✅ User deleted from auth service:', response);
+      })
+    );
   }
 
   updateUser(userId: string, updateData: Partial<User>): Observable<User> {

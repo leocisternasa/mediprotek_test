@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap, switchMap, catchError, of } from 'rxjs';
 import { environment } from '../../../../../apps/frontend/src/environments/environment';
 import { User } from '@mediprotek/shared-interfaces';
+import { AuthService } from './auth.service';
 
 export interface ApiResponse<T> {
   statusCode: number;
@@ -35,7 +36,10 @@ export interface UserFilters {
 export class UserService {
   private readonly API_URL = `${environment.userApiUrl}/api/users`;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {
     console.log('🟡 UserService initialized with API URL:', this.API_URL);
   }
 
@@ -75,7 +79,31 @@ export class UserService {
   }
 
   deleteUser(id: string): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.API_URL}/${id}`);
+    console.log('🗑 Starting user deletion process for:', id);
+    
+    // Primero intentamos eliminar del auth service
+    return this.authService.deleteAuthUser(id).pipe(
+      // Si la eliminación en auth es exitosa o retorna 404, continuamos con user service
+      catchError(error => {
+        if (error.status === 404) {
+          console.log('✅ User not found in auth service, continuing with user service');
+          return of({ message: 'User not found in auth service' });
+        }
+        throw error;
+      }),
+      // Luego eliminamos del user service
+      switchMap(() => {
+        console.log('🗑 Now deleting from user service:', id);
+        return this.http.delete<{ message: string }>(`${this.API_URL}/${id}`);
+      }),
+      tap(response => {
+        console.log('✅ User successfully deleted from both services:', response);
+      }),
+      catchError(error => {
+        console.error('🔴 Error in deletion process:', error);
+        throw error;
+      })
+    );
   }
 
   deleteUsers(ids: string[]): Observable<void> {

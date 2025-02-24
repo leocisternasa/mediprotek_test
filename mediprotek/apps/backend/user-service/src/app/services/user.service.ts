@@ -102,14 +102,17 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    await this.userRepository.remove(user);
-
-    // Emitir evento de usuario eliminado
-    await this.client.emit('user.events', {
+    // Emitir evento de usuario eliminado antes de eliminarlo
+    await this.client.send('user.events.deleted', {
       type: 'user.deleted',
       id,
       deletedAt: new Date()
-    });
+    }).toPromise();
+
+    // Eliminar el usuario
+    await this.userRepository.remove(user);
+
+    console.log('✅ User deleted and event sent:', id);
   }
 
   async deleteBulk(ids: string[]): Promise<void> {

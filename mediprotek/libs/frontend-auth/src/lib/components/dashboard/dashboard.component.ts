@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SelectionModel } from '@angular/cdk/collections';
@@ -6,7 +6,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatTableModule, MatTable } from '@angular/material/table';
+import { MatTableModule, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort, Sort } from '@angular/material/sort';
 import { MatInputModule } from '@angular/material/input';
@@ -67,7 +67,7 @@ import { EditUserComponent } from '../edit-user/edit-user.component';
       <!-- Users Table -->
       <div class="table-wrapper mat-elevation-z8">
         <div class="table-container">
-          <table mat-table [dataSource]="users" matSort (matSortChange)="onSort($event)">
+          <table mat-table [dataSource]="dataSource" matSort [matSortActive]="currentSort.active" [matSortDirection]="currentSort.direction" (matSortChange)="onSort($event)">
           <!-- Checkbox Column -->
           <ng-container matColumnDef="select" *ngIf="isAdmin">
             <th mat-header-cell *matHeaderCellDef>
@@ -90,7 +90,7 @@ import { EditUserComponent } from '../edit-user/edit-user.component';
 
           <!-- Name Column -->
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="firstName">Nombre</th>
             <td mat-cell *matCellDef="let user">{{ user.firstName }} {{ user.lastName }}</td>
           </ng-container>
 
@@ -265,12 +265,21 @@ import { EditUserComponent } from '../edit-user/edit-user.component';
     RouterModule,
   ],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
+  constructor(
+    private authService: AuthService,
+    private userService: UserService,
+    private router: Router,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+  ) {
+    this.dataSource = new MatTableDataSource<User>([]);
+  }
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatTable) table!: MatTable<User>;
 
-  users: User[] = [];
+  dataSource: MatTableDataSource<User>;
   displayedColumns: string[] = ['name', 'email', 'role', 'actions'];
   searchControl = new FormControl('');
   selection = new SelectionModel<User>(true, []);
@@ -284,15 +293,15 @@ export class DashboardComponent implements OnInit {
   totalUsers = 0;
 
   // Sorting
-  currentSort: Sort = { active: 'name', direction: 'asc' };
+  currentSort: Sort = { active: 'firstName', direction: 'asc' };
+  // Mapeo de nombres de columnas a campos del backend
+  sortFieldMap: { [key: string]: string } = {
+    'firstName': 'firstName', // Cuando se ordena por nombre, usamos firstName
+    'email': 'email',
+    'role': 'role'
+  };
 
-  constructor(
-    private authService: AuthService,
-    private userService: UserService,
-    private router: Router,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-  ) {}
+
 
   ngOnInit() {
     console.log('🟡 Dashboard Component initializing...');
@@ -306,8 +315,6 @@ export class DashboardComponent implements OnInit {
     }
     console.log('🔵 Display columns:', this.displayedColumns);
 
-    this.loadUsers();
-
     // Setup search with debounce
     this.searchControl.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
@@ -316,12 +323,14 @@ export class DashboardComponent implements OnInit {
         this.currentPage = 0;
         this.loadUsers();
       });
+
+    this.loadUsers();
   }
 
   /** Whether the number of selected elements matches the total number of rows. */
   isAllSelected() {
     const numSelected = this.selection.selected.length;
-    const numRows = this.users.length;
+    const numRows = this.dataSource.data.length;
     return numSelected === numRows;
   }
 
@@ -329,7 +338,7 @@ export class DashboardComponent implements OnInit {
   masterToggle() {
     this.isAllSelected()
       ? this.selection.clear()
-      : this.users.forEach(row => this.selection.select(row));
+      : this.dataSource.data.forEach(row => this.selection.select(row));
   }
 
   loadUsers() {
@@ -346,14 +355,14 @@ export class DashboardComponent implements OnInit {
     this.userService.getUsers(filters).subscribe(
       response => {
         console.log('✅ Users loaded successfully:', response);
-        this.users = response.users;
+        this.dataSource.data = response.users;
         this.totalUsers = response.total;
         this.selection.clear();
-        console.log('📊 Current users:', this.users);
+        console.log('📊 Current users:', this.dataSource.data);
       },
       error => {
         console.error('Error loading users:', error);
-        this.users = [];
+        this.dataSource.data = [];
         this.totalUsers = 0;
       }
     );
@@ -365,8 +374,26 @@ export class DashboardComponent implements OnInit {
     this.loadUsers();
   }
 
+  ngAfterViewInit() {
+    // Configurar el ordenamiento después de que los ViewChild estén disponibles
+    if (this.sort) {
+      this.sort.active = this.currentSort.active;
+      this.sort.direction = this.currentSort.direction;
+      this.dataSource.sort = this.sort;
+      console.log('🔄 Sort configured:', this.sort);
+    }
+  }
+
   onSort(sort: Sort) {
-    this.currentSort = sort;
+    console.log('🔄 Sort changed:', sort);
+    if (sort.direction === '') {
+      // Si se desactiva el ordenamiento, volver al ordenamiento por defecto
+      sort = { active: 'firstName', direction: 'asc' };
+    }
+    // Mapear el nombre de la columna al campo correcto del backend
+    const backendField = this.sortFieldMap[sort.active] || sort.active;
+    this.currentSort = { ...sort, active: backendField };
+    console.log('🔄 Mapped sort:', this.currentSort);
     this.loadUsers();
   }
 
@@ -397,10 +424,13 @@ export class DashboardComponent implements OnInit {
   }
 
   deleteUser(user: User): void {
+    const isCurrentUser = user.id === this.currentUser?.id;
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
         title: 'Confirmar eliminación',
-        message: `¿Estás seguro de que deseas eliminar al usuario ${user.firstName} ${user.lastName}?`,
+        message: isCurrentUser
+          ? '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y serás desconectado del sistema.'
+          : `¿Estás seguro de que deseas eliminar al usuario ${user.firstName} ${user.lastName}?`,
         confirmText: 'Eliminar',
         cancelText: 'Cancelar'
       }
@@ -412,12 +442,27 @@ export class DashboardComponent implements OnInit {
         this.userService.deleteUser(user.id).subscribe({
           next: (response) => {
             console.log('✅ Delete response:', response);
-            this.snackBar.open('Usuario eliminado con éxito', 'Cerrar', {
-              duration: 3000,
+            
+            // Emitir el evento de usuario eliminado
+            this.authService.emitUserEvent({
+              type: 'user.deleted',
+              id: user.id,
+              deletedAt: new Date().toISOString()
             });
-            if (user.id === this.currentUser?.id) {
-              this.authService.logout();
+
+            if (isCurrentUser) {
+              // Si el usuario eliminó su propia cuenta
+              this.snackBar.open('Tu cuenta ha sido eliminada', 'Cerrar', {
+                duration: 3000,
+              });
+              // Limpiar el almacenamiento y redirigir al login
+              this.authService.clearStorage();
+              this.router.navigate(['/login']);
             } else {
+              // Si un admin eliminó a otro usuario
+              this.snackBar.open('Usuario eliminado con éxito', 'Cerrar', {
+                duration: 3000,
+              });
               this.loadUsers();
             }
           },
