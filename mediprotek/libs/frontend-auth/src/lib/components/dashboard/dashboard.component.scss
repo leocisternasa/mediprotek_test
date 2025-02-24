@@ -27,6 +27,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       transition: all 0.3s ease;
+      background-color: pink;
 
       &:hover {
         transform: translateY(-1px);
@@ -34,9 +35,10 @@
       }
 
       &.profile-button {
-        width: 40px;
+        width: 80px;
         padding: 0;
-        border-radius: 50%;
+        font-size: medium;
+        font-weight: 550;
       }
     }
   }

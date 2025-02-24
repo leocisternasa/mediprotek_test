@@ -1,51 +1,19 @@
-.success-snackbar {
-  background: #4caf50;
-  color: white;
+.mat-mdc-snack-bar-container.success-snackbar {
+  &, .mdc-snackbar__surface {
+    background-color: #4caf50 !important;
+    opacity: 1 !important;
+  }
+
+  .mdc-snackbar__label {
+    color: white !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
 
   .mdc-snackbar__surface {
     background-color: #4caf50 !important;
-  }
-
-  .mat-mdc-button {
-    color: white !important;
-  }
-}
-
-.error-snackbar {
-  background: #f44336;
-  color: white;
-
-  .mdc-snackbar__surface {
-    background-color: #f44336 !important;
-  }
-
-  .mat-mdc-button {
-    color: white !important;
-  }
-}
-
-.warning-snackbar {
-  background: #ff9800;
-  color: white;
-
-  .mdc-snackbar__surface {
-    background-color: #ff9800 !important;
-  }
-
-  .mat-mdc-button {
-    color: white !important;
-  }
-}
-
-.info-snackbar {
-  background: #2196f3;
-  color: white;
-
-  .mdc-snackbar__surface {
-    background-color: #2196f3 !important;
-  }
-
-  .mat-mdc-button {
-    color: white !important;
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
   }
 }

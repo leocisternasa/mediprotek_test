@@ -1,7 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, catchError, of, Subject } from 'rxjs';
-import { LoginDto, AuthResponse, User, UserResponse, AuthState } from '@mediprotek/shared-interfaces';
+import { BehaviorSubject, Observable, tap, catchError, of, Subject, map } from 'rxjs';
+import {
+  LoginDto,
+  AuthResponse,
+  User,
+  UserResponse,
+  AuthState,
+  Role,
+} from '@mediprotek/shared-interfaces';
 import { environment } from '../../../../../apps/frontend/src/environments/environment';
 import { Router } from '@angular/router';
 
@@ -19,6 +26,19 @@ export class AuthService {
   private readonly API_URL = `${environment.apiUrl}/api/auth`;
   private currentUserSubject = new BehaviorSubject<AuthState | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
+
+  // Token management
+  private readonly TOKEN_EXPIRY = 3 * 60 * 1000; // 3 minutos en milisegundos
+  private lastTokenRefresh = new BehaviorSubject<number>(Date.now());
+  lastTokenRefresh$ = this.lastTokenRefresh.asObservable();
+
+  getLastTokenRefresh(): number {
+    return this.lastTokenRefresh.getValue();
+  }
+
+  updateLastTokenRefresh(): void {
+    this.lastTokenRefresh.next(Date.now());
+  }
 
   // Eventos de usuario
   private userEvents = new Subject<{ type: string; id: string; deletedAt?: string }>();
@@ -53,6 +73,11 @@ export class AuthService {
     }
   }
 
+  handleUserDeletion(): void {
+    console.log('🟡 Handling user deletion');
+    this.logout();
+  }
+
   // Método público para emitir eventos
   emitUserEvent(event: { type: string; id: string; deletedAt?: string }): void {
     this.userEvents.next(event);
@@ -63,8 +88,8 @@ export class AuthService {
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        console.log('🟢 Restored user session:', { 
-          email: userData.email
+        console.log('🟢 Restored user session:', {
+          email: userData.email,
         });
         this.currentUserSubject.next({ user: userData });
       } catch (error) {
@@ -76,57 +101,78 @@ export class AuthService {
 
   login(loginDto: LoginDto): Observable<ApiResponse<AuthResponse>> {
     console.log('🟡 Making login request to:', `${this.API_URL}/login`);
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/login`, loginDto, {
-      withCredentials: true
-    }).pipe(
-      tap(response => {
-        console.log('🟢 Login response received:', {
-          statusCode: response.statusCode,
-          message: response.message,
-          userId: response.data.user.id,
-          email: response.data.user.email
-        });
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user));
-        this.currentUserSubject.next({ user: response.data.user });
-      }),
-    );
+    return this.http
+      .post<ApiResponse<AuthResponse>>(`${this.API_URL}/login`, loginDto, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap(response => {
+          console.log('🟢 Login response received:', {
+            statusCode: response.statusCode,
+            message: response.message,
+            userId: response.data.user.id,
+            email: response.data.user.email,
+          });
+          localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+          this.currentUserSubject.next({ user: response.data.user });
+          // Actualizar el timestamp del token
+          this.lastTokenRefresh.next(Date.now());
+        }),
+      );
   }
 
   register(registerDto: any): Observable<ApiResponse<AuthResponse>> {
-    console.log('🟡 Making register request to:', `${this.API_URL}/register`);
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/register`, registerDto, {
-      withCredentials: true
-    }).pipe(
-      tap(response => {
-        console.log('🟢 Register response received:', {
-          statusCode: response.statusCode,
-          message: response.message,
-          userId: response.data.user.id,
-          email: response.data.user.email,
-        });
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user));
-        this.currentUserSubject.next({ user: response.data.user });
-      }),
-    );
+    console.log('🟡 Making register request to:', `${this.API_URL}/register`, {
+      email: registerDto.email,
+      firstName: registerDto.firstName,
+      lastName: registerDto.lastName,
+      role: registerDto.role,
+      password: '***HIDDEN***',
+    });
+
+    // Asegurarnos de que el rol esté presente
+    if (!registerDto.role) {
+      console.warn('No role provided in registerDto, using USER as default');
+      registerDto.role = Role.USER;
+    }
+
+    return this.http
+      .post<ApiResponse<AuthResponse>>(`${this.API_URL}/register`, registerDto, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap(response => {
+          console.log('🟢 Register response received:', {
+            statusCode: response.statusCode,
+            message: response.message,
+            userId: response.data.user.id,
+            email: response.data.user.email,
+          });
+          localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+          this.currentUserSubject.next({ user: response.data.user });
+        }),
+      );
   }
 
   logout(): Observable<{ message: string }> {
     console.log('🟡 Making logout request to:', `${this.API_URL}/logout`);
     const currentUser = this.currentUserSubject.value;
-    
+
     if (!currentUser) {
       this.handleLogoutSuccess();
       return of({ message: 'Logged out successfully' });
     }
 
-    return this.http.post<{ message: string }>(`${this.API_URL}/logout`, {}, { withCredentials: true }).pipe(
-      tap(() => this.handleLogoutSuccess()),
-      catchError(error => {
-        console.error('🔴 Error during logout:', error);
-        this.handleLogoutSuccess(); // Logout anyway on error
-        return of({ message: 'Logged out successfully' }); // No propagar el error
-      })
-    );
+    return this.http
+      .post<{ message: string }>(`${this.API_URL}/logout`, {}, { withCredentials: true })
+      .pipe(
+        tap(() => this.handleLogoutSuccess()),
+        catchError(error => {
+          console.error('🔴 Error during logout:', error);
+          this.handleLogoutSuccess(); // Logout anyway on error
+          return of({ message: 'Logged out successfully' }); // No propagar el error
+        }),
+      );
   }
 
   clearStorage(): void {
@@ -148,7 +194,7 @@ export class AuthService {
     return this.http.delete<{ message: string }>(`${this.API_URL}/users/${userId}`).pipe(
       tap(response => {
         console.log('✅ User deleted from auth service:', response);
-      })
+      }),
     );
   }
 
@@ -162,42 +208,64 @@ export class AuthService {
         if (currentUser && currentUser.user.id === userId) {
           this.currentUserSubject.next({
             ...currentUser,
-            user: { ...currentUser.user, ...updateData }
+            user: { ...currentUser.user, ...updateData },
           });
         }
-      })
+      }),
     );
   }
 
   refreshToken(): Observable<ApiResponse<AuthResponse>> {
-    console.log('🟡 Making refresh token request');
-    
-    return this.http.post<ApiResponse<AuthResponse>>(`${this.API_URL}/refresh`, {}, {
-      withCredentials: true
-    }).pipe(
-      tap(response => {
-        console.log('🟢 Refresh token response received:', {
-          statusCode: response.statusCode,
-          message: response.message,
-          userId: response.data.user.id,
-          email: response.data.user.email
-        });
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user));
-        this.currentUserSubject.next({ user: response.data.user });
-      }),
-      catchError(error => {
-        console.error('🔴 Error refreshing token:', error);
-        if (error.status === 401 || error.status === 403) {
-          this.clearStorage();
-        }
-        throw error;
-      })
-    );
-  }
+    const currentTime = new Date();
+    const lastRefreshTime = new Date(this.getLastTokenRefresh());
+    const timeSinceLastRefresh = currentTime.getTime() - lastRefreshTime.getTime();
 
-  handleUserDeletion(): void {
-    console.log('🟡 Handling user deletion');
-    this.logout();
+    console.log('🟡 Making refresh token request', {
+      currentTime: currentTime.toISOString(),
+      lastRefreshTime: lastRefreshTime.toISOString(),
+      timeSinceLastRefresh: `${Math.round(timeSinceLastRefresh / 1000)} seconds`,
+      endpoint: `${this.API_URL}/refresh`,
+    });
+
+    return this.http
+      .post<ApiResponse<AuthResponse>>(
+        `${this.API_URL}/refresh`,
+        {},
+        {
+          withCredentials: true,
+          observe: 'response',
+        },
+      )
+      .pipe(
+        tap(response => {
+          console.log('🟢 Refresh token response received:', {
+            status: response.status,
+            headers: response.headers.keys(),
+            hasCookies: response.headers.has('set-cookie'),
+            body: response.body,
+          });
+
+          if (response.body?.data?.user) {
+            localStorage.setItem('userInfo', JSON.stringify(response.body.data.user));
+            this.currentUserSubject.next({ user: response.body.data.user });
+            this.updateLastTokenRefresh();
+            console.log(
+              '🟢 User info updated and lastTokenRefresh timestamp set to:',
+              new Date().toISOString(),
+            );
+          } else {
+            console.error('🔴 No user data in refresh response');
+          }
+        }),
+        map(response => response.body as ApiResponse<AuthResponse>),
+        catchError(error => {
+          console.error('🔴 Error refreshing token:', error);
+          if (error.status === 401 || error.status === 403) {
+            this.clearStorage();
+          }
+          throw error;
+        }),
+      );
   }
 
   updateCurrentUser(updatedUser: UserResponse): void {
@@ -211,13 +279,11 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     const isAuth = !!this.currentUserSubject.value;
-    console.log('🔵 Checking authentication:', isAuth);
     return isAuth;
   }
 
   getToken(): string | null {
-    // Los tokens ahora están en las cookies, no necesitamos este método
-    // pero lo mantenemos por compatibilidad
+    // No necesitamos este método ya que usamos cookies
     return null;
   }
 

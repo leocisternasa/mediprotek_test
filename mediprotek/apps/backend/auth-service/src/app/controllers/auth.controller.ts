@@ -87,7 +87,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000 // 15 minutos
+      maxAge: 3 * 60 * 1000 // 3 minutos
     });
 
     // Configurar cookie para refresh token
@@ -119,11 +119,20 @@ export class AuthController {
     try {
       const auth = await this.authService.refreshToken({ refreshToken: tokenFromCookie });
       
+      // Renovar access token cookie
       response.cookie('access_token', auth.data.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 15 * 60 * 1000 // 15 minutos
+        maxAge: 3 * 60 * 1000 // 3 minutos
+      });
+
+      // Renovar refresh token cookie
+      response.cookie('refresh_token', auth.data.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
       });
 
       // No enviar tokens en la respuesta

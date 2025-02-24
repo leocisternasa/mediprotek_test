@@ -1,67 +1,42 @@
-// Estilos globales para los dropdowns de Material
-.mat-mdc-select-panel,
-.mat-mdc-menu-panel,
-.mat-mdc-autocomplete-panel {
-  background: white !important;
-  border-radius: 4px !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+// Estilos globales para los inputs de Material
+.mat-mdc-form-field {
+  .mat-mdc-text-field-wrapper {
+    padding: 0 12px !important;
+  }
 
-  .mat-mdc-option {
-    background: white !important;
-    height: 40px !important;
-    line-height: 40px !important;
-    padding: 0 16px !important;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04) !important;
+  .mdc-text-field--outlined {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__trailing {
+      border-radius: 4px !important;
     }
+  }
 
-    &.mdc-list-item--selected {
-      background-color: rgba(63, 81, 181, 0.08) !important;
+  .mat-mdc-form-field-infix {
+    padding: 12px 0 !important;
+    min-height: 48px !important;
+  }
+
+  .mdc-text-field--outlined .mdc-text-field__input {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .mdc-floating-label {
+    padding-left: 8px !important;
+  }
+
+  &.mat-mdc-form-field-appearance-outline {
+    .mat-mdc-form-field-wrapper {
+      margin: 8px 0 !important;
     }
   }
 }
 
-// Estilos para el panel del paginador
-.mat-mdc-paginator-page-size-select {
-  .mat-mdc-select-panel {
-    background: white !important;
-    min-width: unset !important;
-    border-radius: 4px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-
-    .mat-mdc-option {
-      background: white !important;
-      min-height: 36px !important;
-      line-height: 36px !important;
-    }
-  }
-}
-
-// Estilos para los menús
-.mat-mdc-menu-content {
-  background: white !important;
-  padding: 8px 0 !important;
-
-  .mat-mdc-menu-item {
-    background: white !important;
-    height: 40px !important;
-    line-height: 40px !important;
-    padding: 0 16px !important;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.04) !important;
-    }
-
-    &.mat-mdc-menu-item-highlighted {
-      background-color: rgba(0, 0, 0, 0.04) !important;
-    }
-  }
-}
-
-// Estilos para los diálogos
-.mat-mdc-dialog-container {
-  .mat-mdc-select-panel {
-    background: white !important;
+// Ajustes específicos para los inputs de login y registro
+.login-form,
+.register-form {
+  .mat-mdc-form-field {
+    width: 100%;
+    margin-bottom: 16px;
   }
 }

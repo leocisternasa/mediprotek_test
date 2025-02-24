@@ -14,6 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { EditUserComponent } from '../edit-user/edit-user.component';
+import { Role } from '@mediprotek/shared-interfaces';
 
 @Component({
   selector: 'mediprotek-login',
@@ -55,13 +56,16 @@ export class LoginComponent {
   openRegisterDialog() {
     const dialogRef = this.dialog.open(EditUserComponent, {
       width: '600px',
-      data: { isNew: true },
+      data: {
+        isNew: true,
+        defaultRole: Role.ADMIN,
+      },
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.snackBar.open('Usuario registrado exitosamente. Por favor inicia sesión.', 'Cerrar', {
-          duration: 5000,
+        this.snackBar.open('Usuario registrado exitosamente. ', 'Cerrar', {
+          duration: 3000,
         });
       }
     });
