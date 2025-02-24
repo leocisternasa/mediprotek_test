@@ -520,6 +520,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe({
+      next: () => {
+        // El AuthService ya maneja la limpieza del storage y la redirección
+        this.snackBar.open('Sesión cerrada correctamente', 'Cerrar', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        console.error('🔴 Logout error:', error);
+        // Incluso si hay error, forzamos el logout
+        this.authService.clearStorage();
+        this.router.navigate(['/login']);
+        this.snackBar.open('Error al cerrar sesión', 'Cerrar', {
+          duration: 3000
+        });
+      }
+    });
   }
 }
