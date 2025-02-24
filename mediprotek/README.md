@@ -90,13 +90,13 @@ docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
    **auth-service/.env**:
 
-   ```va en el archivo auth-service/.env , para comodidad se comparte en el repo
+   ```va en el archivo apps/backend/auth-service/.env , para comodidad se comparte en el repo
 
    ```
 
    **user-service/.env**:
 
-   ```va en el archivo auth-service/.env , para comodidad se comparte en el repo
+   ```va en el archivo apps/backend/auth-service/.env , para comodidad se comparte en el repo
 
    ```
 

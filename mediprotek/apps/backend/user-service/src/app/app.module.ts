@@ -9,13 +9,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { User } from './entities/user.entity';
 import { UserService } from './services/user.service';
 import { UserController } from './controllers/user.controller';
-import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
+import {
+  RABBITMQ_CONFIG,
+  RABBITMQ_URI,
+} from '@libs/shared-interfaces/src/lib/config/rabbitmq.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env'
+      envFilePath: '.env',
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
@@ -23,7 +26,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: '15m',
+          expiresIn: '3h',
         },
       }),
       inject: [ConfigService],
@@ -53,7 +56,7 @@ import { RABBITMQ_CONFIG, RABBITMQ_URI } from '@libs/shared-interfaces/src/lib/c
             urls: [(configService.get('RABBITMQ_URI') || RABBITMQ_URI) as string],
             queue: RABBITMQ_CONFIG.queues.authService,
             queueOptions: {
-              durable: true
+              durable: true,
             },
           },
         }),

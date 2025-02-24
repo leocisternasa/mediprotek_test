@@ -12,17 +12,14 @@ import { JwtCookieGuard } from './guards/jwt-cookie.guard';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: '15m',
+          expiresIn: '3h',
         },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtCookieGuard
-  ],
+  providers: [AuthService, JwtCookieGuard],
   exports: [AuthService, JwtCookieGuard],
 })
 export class AuthModule {}

@@ -30,6 +30,9 @@ import { AuthService } from '../../services/auth.service';
             <mat-error *ngIf="userForm.get('firstName')?.errors?.['minlength']">
               El nombre debe tener al menos 2 caracteres
             </mat-error>
+            <mat-error *ngIf="userForm.get('firstName')?.errors?.['pattern']">
+              El nombre debe tener solo letras
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -40,6 +43,9 @@ import { AuthService } from '../../services/auth.service';
             </mat-error>
             <mat-error *ngIf="userForm.get('lastName')?.errors?.['minlength']">
               El apellido debe tener al menos 2 caracteres
+            </mat-error>
+            <mat-error *ngIf="userForm.get('lastName')?.errors?.['pattern']">
+              El apellido debe tener solo letras
             </mat-error>
           </mat-form-field>
 
@@ -69,7 +75,10 @@ import { AuthService } from '../../services/auth.service';
               La contraseña es requerida
             </mat-error>
             <mat-error *ngIf="userForm.get('password')?.errors?.['minlength']">
-              La contraseña debe tener al menos 6 caracteres
+              La contraseña debe tener al menos 6 caracteres.
+            </mat-error>
+            <mat-error *ngIf="userForm.get('password')?.errors?.['pattern']">
+              La contraseña debe tener al menos una mayúscula y un caracter especial (!#$%)
             </mat-error>
           </mat-form-field>
 
@@ -105,11 +114,61 @@ import { AuthService } from '../../services/auth.service';
       .form-container {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        padding: 16px 0;
+        gap: 35px;
+        padding: 24px 0;
+        min-height: 400px;
+        height: 100%;
       }
       mat-form-field {
         width: 100%;
+      }
+      mat-error {
+        background-color: white !important;
+        opacity: 1 !important;
+        padding: 4px 0;
+        margin-top: 4px;
+        color: #f44336 !important;
+      }
+      ::ng-deep {
+        .mat-select-panel {
+          background-color: white !important;
+          opacity: 1 !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        .mat-option {
+          background-color: white !important;
+          opacity: 1 !important;
+        }
+      }
+      ::ng-deep .mat-select-panel {
+        background-color: white !important;
+        opacity: 1 !important;
+      }
+      .mat-option-text {
+        opacity: 1 !important;
+        color: rgba(0, 0, 0, 0.87) !important;
+      }
+      .mat-form-field-wrapper {
+        margin-bottom: 16px !important;
+        padding-bottom: 16px !important;
+      }
+      ::ng-deep .mat-error {
+        background-color: white !important;
+        opacity: 1 !important;
+        padding: 4px 0;
+        margin-top: 4px;
+      }
+      ::ng-deep .mat-form-field-subscript-wrapper {
+        margin-top: 4px !important;
+        padding-bottom: 4px !important;
+      }
+      ::ng-deep .mat-select-panel {
+        z-index: 1000 !important;
+      }
+      ::ng-deep .mat-form-field-wrapper {
+        margin-bottom: 16px !important;
+        padding-bottom: 16px !important;
       }
     `,
   ],
@@ -170,10 +229,33 @@ export class EditUserComponent implements OnInit {
 
   private initForm() {
     this.userForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      firstName: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(50),
+          Validators.pattern(/^[a-zA-Z]+$/),
+        ],
+      ],
+      lastName: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(50),
+          Validators.pattern(/^[a-zA-Z]+$/),
+        ],
+      ],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(6),
+          Validators.pattern(/^(?=.*[A-Z])(?=.*[!@#$%^&*]).*$/),
+        ],
+      ],
       role: [Role.ADMIN, [Validators.required]],
     });
   }

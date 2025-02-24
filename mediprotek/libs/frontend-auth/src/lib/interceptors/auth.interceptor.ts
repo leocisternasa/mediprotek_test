@@ -4,7 +4,7 @@ import {
   HttpHandler,
   HttpEvent,
   HttpInterceptor,
-  HttpErrorResponse
+  HttpErrorResponse,
 } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, filter, take, switchMap } from 'rxjs/operators';
@@ -29,7 +29,7 @@ export class AuthInterceptor implements HttpInterceptor {
           return this.handle401Error(request, next);
         }
         return throwError(() => error);
-      })
+      }),
     );
   }
 
@@ -49,14 +49,14 @@ export class AuthInterceptor implements HttpInterceptor {
           this.isRefreshing = false;
           this.authService.logout();
           return throwError(() => error);
-        })
+        }),
       );
     }
 
     return this.refreshTokenSubject.pipe(
       filter(token => token !== null),
       take(1),
-      switchMap(() => next.handle(request))
+      switchMap(() => next.handle(request)),
     );
   }
 }

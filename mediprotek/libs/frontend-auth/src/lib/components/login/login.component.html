@@ -29,6 +29,9 @@
           <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
             La contraseña debe tener al menos 6 caracteres
           </mat-error>
+          <mat-error *ngIf="loginForm.get('password')?.hasError('pattern')">
+            La contraseña debe tener al menos una mayúscula y un caracter especial (!#$%)
+          </mat-error>
         </mat-form-field>
 
         <button

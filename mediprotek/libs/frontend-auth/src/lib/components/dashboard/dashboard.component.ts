@@ -56,7 +56,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     MatDialogModule,
     MatTooltipModule,
     MatChipsModule,
-  ]
+  ],
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
   // Exponer Role al template
@@ -78,7 +78,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   sortFieldMap: { [key: string]: string } = {
     firstName: 'firstName',
     email: 'email',
-    role: 'role'
+    role: 'role',
   };
 
   constructor(
@@ -86,7 +86,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     private userService: UserService,
     private router: Router,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit() {
@@ -128,25 +128,23 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       page: this.paginator ? Math.max(1, this.paginator.pageIndex + 1) : 1,
       limit: this.pageSize,
       sortBy: this.sortFieldMap[this.currentSort.active] || 'firstName',
-      sortDirection: this.currentSort.direction || 'asc'
+      sortDirection: this.currentSort.direction || 'asc',
     };
 
     console.log('🔄 Loading users with filters:', filters);
 
-    this.userService
-      .getUsers(filters)
-      .subscribe({
-        next: response => {
-          console.log('✅ Users loaded:', response);
-          this.dataSource.data = response.users;
-          this.totalUsers = response.total;
-        },
-        error: error => {
-          console.error('Error loading users:', error);
-          this.dataSource.data = [];
-          this.totalUsers = 0;
-        }
-      });
+    this.userService.getUsers(filters).subscribe({
+      next: response => {
+        console.log('✅ Users loaded:', response);
+        this.dataSource.data = response.users;
+        this.totalUsers = response.total;
+      },
+      error: error => {
+        console.error('Error loading users:', error);
+        this.dataSource.data = [];
+        this.totalUsers = 0;
+      },
+    });
   }
 
   /** Whether the number of selected elements matches the total number of rows. */
@@ -165,8 +163,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   createUser() {
     const dialogRef = this.dialog.open(EditUserComponent, {
+      width: '600px',
       data: { isNew: true },
-      disableClose: true
+      disableClose: true,
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -177,7 +176,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   editUser(user: User) {
     const dialogRef = this.dialog.open(EditUserComponent, {
       data: { user, isNew: false },
-      disableClose: true
+      disableClose: true,
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -194,8 +193,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           ? '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y serás desconectado del sistema.'
           : `¿Estás seguro de que deseas eliminar al usuario ${user.firstName} ${user.lastName}?`,
         confirmText: 'Eliminar',
-        cancelText: 'Cancelar'
-      }
+        cancelText: 'Cancelar',
+      },
     });
 
     dialogRef.afterClosed().subscribe(result => {
@@ -209,7 +208,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             this.authService.emitUserEvent({
               type: 'user.deleted',
               id: user.id,
-              deletedAt: new Date().toISOString()
+              deletedAt: new Date().toISOString(),
             });
 
             if (isCurrentUser) {
@@ -218,7 +217,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
               this.router.navigate(['/login']);
             } else {
               this.snackBar.open('Usuario eliminado con éxito', 'Cerrar', {
-                duration: 3000
+                duration: 3000,
               });
               this.loadUsers();
             }
@@ -226,9 +225,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           error: error => {
             console.error('❌ Delete error:', error);
             this.snackBar.open('Error al eliminar usuario', 'Cerrar', {
-              duration: 3000
+              duration: 3000,
             });
-          }
+          },
         });
       }
     });
@@ -249,9 +248,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         users: selectedUsers.map(user => ({
           firstName: user.firstName,
           lastName: user.lastName,
-          email: user.email
-        }))
-      }
+          email: user.email,
+        })),
+      },
     });
 
     bulkDeleteDialogRef.afterClosed().subscribe(result => {
@@ -263,7 +262,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
                 selectedUsers.length === 1 ? 'usuario eliminado' : 'usuarios eliminados'
               } con éxito`,
               'Cerrar',
-              { duration: 3000 }
+              { duration: 3000 },
             );
             this.loadUsers();
             this.selection.clear();
@@ -271,9 +270,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           error: error => {
             console.error('❌ Delete error:', error);
             this.snackBar.open('Error al eliminar usuarios', 'Cerrar', {
-              duration: 3000
+              duration: 3000,
             });
-          }
+          },
         });
       }
     });
@@ -284,7 +283,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       next: () => {
         // El AuthService ya maneja la limpieza del storage y la redirección
         this.snackBar.open('Sesión cerrada correctamente', 'Cerrar', {
-          duration: 3000
+          duration: 3000,
         });
       },
       error: error => {
@@ -293,9 +292,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.authService.clearStorage();
         this.router.navigate(['/login']);
         this.snackBar.open('Error al cerrar sesión', 'Cerrar', {
-          duration: 3000
+          duration: 3000,
         });
-      }
+      },
     });
   }
 }
