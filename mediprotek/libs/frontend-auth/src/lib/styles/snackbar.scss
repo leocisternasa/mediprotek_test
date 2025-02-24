@@ -1,0 +1,51 @@
+.success-snackbar {
+  background: #4caf50;
+  color: white;
+
+  .mdc-snackbar__surface {
+    background-color: #4caf50 !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.error-snackbar {
+  background: #f44336;
+  color: white;
+
+  .mdc-snackbar__surface {
+    background-color: #f44336 !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.warning-snackbar {
+  background: #ff9800;
+  color: white;
+
+  .mdc-snackbar__surface {
+    background-color: #ff9800 !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+.info-snackbar {
+  background: #2196f3;
+  color: white;
+
+  .mdc-snackbar__surface {
+    background-color: #2196f3 !important;
+  }
+
+  .mat-mdc-button {
+    color: white !important;
+  }
+}

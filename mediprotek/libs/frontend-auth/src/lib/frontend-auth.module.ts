@@ -22,12 +22,10 @@ import { authRoutes } from './auth.routes';
   ],
   declarations: [
     LoginComponent,
-    DashboardComponent,
     UserDetailComponent
   ],
   exports: [
     LoginComponent,
-    DashboardComponent,
     UserDetailComponent
   ],
   providers: [

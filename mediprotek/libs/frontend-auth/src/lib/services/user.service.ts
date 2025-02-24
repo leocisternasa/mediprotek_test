@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, switchMap, catchError, of } from 'rxjs';
 import { environment } from '../../../../../apps/frontend/src/environments/environment';
-import { User } from '@mediprotek/shared-interfaces';
+import { User, UserPaginatedResponse, UserFilters } from '@mediprotek/shared-interfaces';
 import { AuthService } from './auth.service';
 
 export interface ApiResponse<T> {
@@ -12,22 +12,9 @@ export interface ApiResponse<T> {
   timestamp?: string;
 }
 
-export interface UserPaginatedResponse {
-  users: User[];
-  total: number;
-}
-
 export interface UsersResponse {
   users: User[];
   total: number;
-}
-
-export interface UserFilters {
-  search?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortDirection?: 'asc' | 'desc';
 }
 
 @Injectable({

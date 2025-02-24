@@ -131,7 +131,7 @@ export class AuthService {
 
   clearStorage(): void {
     console.log('🟡 Clearing storage');
-    localStorage.clear();
+    localStorage.removeItem('userInfo');
     this.currentUserSubject.next(null);
   }
 
@@ -176,13 +176,20 @@ export class AuthService {
       withCredentials: true
     }).pipe(
       tap(response => {
-        console.log('🟢 Refresh token response received');
+        console.log('🟢 Refresh token response received:', {
+          statusCode: response.statusCode,
+          message: response.message,
+          userId: response.data.user.id,
+          email: response.data.user.email
+        });
         localStorage.setItem('userInfo', JSON.stringify(response.data.user));
         this.currentUserSubject.next({ user: response.data.user });
       }),
       catchError(error => {
         console.error('🔴 Error refreshing token:', error);
-        this.handleLogoutSuccess();
+        if (error.status === 401 || error.status === 403) {
+          this.clearStorage();
+        }
         throw error;
       })
     );

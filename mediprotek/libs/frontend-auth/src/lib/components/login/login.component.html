@@ -41,6 +41,12 @@
           <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
           <span *ngIf="!loading">Iniciar Sesión</span>
         </button>
+
+        <div class="register-link">
+          <a mat-button color="primary" (click)="openRegisterDialog()">
+            ¿No estás registrado? Haz click aquí
+          </a>
+        </div>
       </form>
     </mat-card-content>
   </mat-card>

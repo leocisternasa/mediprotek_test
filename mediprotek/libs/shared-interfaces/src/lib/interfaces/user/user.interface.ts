@@ -52,3 +52,12 @@ export interface UserPaginatedResponse {
   page: number;
   limit: number;
 }
+
+// DTO para filtros de usuarios
+export interface UserFilters {
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}

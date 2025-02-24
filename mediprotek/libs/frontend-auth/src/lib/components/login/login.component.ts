@@ -11,6 +11,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
+import { EditUserComponent } from '../edit-user/edit-user.component';
 
 @Component({
   selector: 'mediprotek-login',
@@ -26,6 +29,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
   ],
 })
 export class LoginComponent {
@@ -38,6 +42,7 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -45,6 +50,21 @@ export class LoginComponent {
     });
 
     console.log('Login Component Initialized');
+  }
+
+  openRegisterDialog() {
+    const dialogRef = this.dialog.open(EditUserComponent, {
+      width: '600px',
+      data: { isNew: true },
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.snackBar.open('Usuario registrado exitosamente. Por favor inicia sesión.', 'Cerrar', {
+          duration: 5000,
+        });
+      }
+    });
   }
 
   onSubmit() {
