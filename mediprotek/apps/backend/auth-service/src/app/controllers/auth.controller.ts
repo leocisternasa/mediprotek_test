@@ -1,4 +1,16 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Get, Request, Req, Res, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Get,
+  Request,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { RequestWithUser } from '../interfaces/jwt-payload.interface';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -35,7 +47,7 @@ export class AuthController {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        role: data.role
+        role: data.role,
       });
       console.log('✅ User updated in auth-service:', data.id);
       return { success: true };
@@ -78,7 +90,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async httpLogin(
     @Body() data: LoginUserCommand,
-    @Res({ passthrough: true }) response: ExpressResponse
+    @Res({ passthrough: true }) response: ExpressResponse,
   ) {
     const auth = await this.authService.login(data);
 
@@ -87,7 +99,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 3 * 60 * 1000 // 3 minutos
+      maxAge: 20 * 60 * 60 * 1000, // 20 horas
     });
 
     // Configurar cookie para refresh token
@@ -95,7 +107,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
     });
 
     // No enviar tokens en la respuesta
@@ -103,13 +115,11 @@ export class AuthController {
     return { statusCode: HttpStatus.OK, message: 'Login successful', data: userInfo };
   }
 
-
-
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async httpRefreshToken(
     @Req() request: ExpressRequest,
-    @Res({ passthrough: true }) response: ExpressResponse
+    @Res({ passthrough: true }) response: ExpressResponse,
   ) {
     const tokenFromCookie = request.cookies['refresh_token'];
     if (!tokenFromCookie) {
@@ -118,13 +128,13 @@ export class AuthController {
 
     try {
       const auth = await this.authService.refreshToken({ refreshToken: tokenFromCookie });
-      
+
       // Renovar access token cookie
       response.cookie('access_token', auth.data.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 3 * 60 * 1000 // 3 minutos
+        maxAge: 20 * 60 * 60 * 1000, // 20 horas
       });
 
       // Renovar refresh token cookie
@@ -132,7 +142,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
       });
 
       // No enviar tokens en la respuesta
@@ -151,18 +161,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async httpLogout(
     @Request() req: RequestWithUser,
-    @Res({ passthrough: true }) response: ExpressResponse
+    @Res({ passthrough: true }) response: ExpressResponse,
   ) {
     await this.authService.logout(req.user.id);
-    
+
     // Limpiar cookies
     response.clearCookie('access_token');
     response.clearCookie('refresh_token');
-    
+
     return { message: 'Logged out successfully' };
   }
-
-
 
   // RabbitMQ Message Patterns
   @MessagePattern(AuthEventPatterns.REGISTER_USER)

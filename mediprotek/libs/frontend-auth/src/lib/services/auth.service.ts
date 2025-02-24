@@ -215,56 +215,34 @@ export class AuthService {
     );
   }
 
+  getAccessToken(): string | null {
+    // Obtener el token de la cookie access_token
+    return this.getCookie('access_token');
+  }
+
+  private getCookie(name: string): string | null {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      const cookieValue = parts.pop()?.split(';').shift();
+      return cookieValue || null;
+    }
+    return null;
+  }
+
   refreshToken(): Observable<ApiResponse<AuthResponse>> {
-    const currentTime = new Date();
-    const lastRefreshTime = new Date(this.getLastTokenRefresh());
-    const timeSinceLastRefresh = currentTime.getTime() - lastRefreshTime.getTime();
-
-    console.log('🟡 Making refresh token request', {
-      currentTime: currentTime.toISOString(),
-      lastRefreshTime: lastRefreshTime.toISOString(),
-      timeSinceLastRefresh: `${Math.round(timeSinceLastRefresh / 1000)} seconds`,
-      endpoint: `${this.API_URL}/refresh`,
-    });
-
+    console.log('🟡 Refreshing token...');
     return this.http
-      .post<ApiResponse<AuthResponse>>(
-        `${this.API_URL}/refresh`,
-        {},
-        {
-          withCredentials: true,
-          observe: 'response',
-        },
-      )
+      .post<ApiResponse<AuthResponse>>(`${this.API_URL}/refresh`, {}, {
+        withCredentials: true // Importante para enviar y recibir cookies
+      })
       .pipe(
         tap(response => {
-          console.log('🟢 Refresh token response received:', {
-            status: response.status,
-            headers: response.headers.keys(),
-            hasCookies: response.headers.has('set-cookie'),
-            body: response.body,
-          });
-
-          if (response.body?.data?.user) {
-            localStorage.setItem('userInfo', JSON.stringify(response.body.data.user));
-            this.currentUserSubject.next({ user: response.body.data.user });
-            this.updateLastTokenRefresh();
-            console.log(
-              '🟢 User info updated and lastTokenRefresh timestamp set to:',
-              new Date().toISOString(),
-            );
-          } else {
-            console.error('🔴 No user data in refresh response');
+          console.log('🟢 Token refreshed successfully');
+          if (response.data?.user) {
+            this.currentUserSubject.next({ user: response.data.user });
           }
-        }),
-        map(response => response.body as ApiResponse<AuthResponse>),
-        catchError(error => {
-          console.error('🔴 Error refreshing token:', error);
-          if (error.status === 401 || error.status === 403) {
-            this.clearStorage();
-          }
-          throw error;
-        }),
+        })
       );
   }
 
